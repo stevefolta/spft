@@ -1,22 +1,37 @@
 #include "History.h"
+#include "Line.h"
+
 
 History::History()
 {
-	/***/
+	at_end_of_line = true;
+	capacity = 10000;
+	first_line = last_line = first_line_index = 0;
+	current_line = 0;
+	lines = new Line*[capacity];
+	for (int64_t i = 0; i < capacity; ++i)
+		lines[i] = nullptr;
+	lines[0] = new Line();
 }
 
 
-int History::num_lines()
+History::~History()
 {
-	/***/
-	return 0;
+	for (int64_t i = 0; i < capacity; ++i)
+		delete lines[i];
+	delete[] lines;
 }
 
 
-const char* History::line(int which_line)
+int64_t History::num_lines()
 {
-	/***/
-	return "";
+	return last_line;
+}
+
+
+Line* History::line(int64_t which_line)
+{
+	return lines[(first_line_index + (which_line - first_line)) % capacity];
 }
 
 
@@ -63,7 +78,12 @@ int History::add_input(const char* input, int length)
 
 void History::add_to_current_line(const char* start, const char* end)
 {
-	/***/
+	Line* cur_line = line(current_line);
+	if (at_end_of_line)
+		cur_line->append_characters(start, end - start, current_style);
+	else {
+		//*** TODO
+		}
 }
 
 

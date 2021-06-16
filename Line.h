@@ -12,6 +12,9 @@ class Line {
 		~Line();
 
 		void	append_characters(const char* bytes, int length, Style style);
+		bool	empty()  {
+			return runs.empty();
+			}
 
 	protected:
 		std::list<Run*>	runs;
