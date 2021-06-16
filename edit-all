@@ -3,7 +3,7 @@
 import subprocess, os
 
 classes = [
-	"Window", "Terminal", "History", "Line", "Run", "Style",
+	"TermWindow", "Terminal", "History", "Line", "Run", "Style",
 	"UTF8",
 	]
 

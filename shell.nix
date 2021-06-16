@@ -1,7 +1,7 @@
 { pkgs ? import <nixpkgs> {} }:
 
 pkgs.mkShell {
-	buildInputs = [  ];
+	buildInputs = with pkgs; [ xorg.libXft ];
 	}
 
 

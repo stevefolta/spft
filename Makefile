@@ -5,7 +5,7 @@ X11_TOP := /usr/X11R6
 
 -include Makefile.local
 
-SOURCES := Window.cpp Terminal.cpp History.cpp Line.cpp Run.cpp UTF8.cpp main.cpp
+SOURCES := TermWindow.cpp Terminal.cpp History.cpp Line.cpp Run.cpp UTF8.cpp main.cpp
 
 OBJECTS = $(foreach source,$(SOURCES),$(OBJECTS_DIR)/$(source:.cpp=.o))
 OBJECTS_SUBDIRS = $(foreach dir,$(SUBDIRS),$(OBJECTS_DIR)/$(dir))
@@ -20,13 +20,12 @@ X11_INCLUDES := $(X11_TOP)/include
 X11_LIBS := $(X11_TOP)/lib
 
 CPP := g++
-# CFLAGS += $(foreach dir,$(THIRD_PARTY_INCLUDES),-Isrc/$(dir))
 CFLAGS += -MMD
 CFLAGS += -g
 CFLAGS += $(foreach switch,$(SWITCHES),-D$(switch))
 
 CFLAGS += -std=c++11 -I$(X11_INCLUDES)
-LINK_FLAGS += -L$(X11_LIBS)
+LINK_FLAGS += -L$(X11_LIBS) -lX11
 
 $(OBJECTS_DIR)/%.o: %.cpp
 	@echo Compiling $<...
