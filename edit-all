@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+
+import subprocess, os
+
+classes = [ "Window", "Terminal", "History" ]
+
+files = []
+for class_name in classes:
+	files.append(class_name + ".h")
+	files.append(class_name + ".cpp")
+files += [ "main.cpp", "Makefile", "Makefile.local", "edit-all", "README.md" ]
+
+subprocess.run([ f"{os.environ['EDITOR']}" ] + files)
+
