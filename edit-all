@@ -2,7 +2,10 @@
 
 import subprocess, os
 
-classes = [ "Window", "Terminal", "History" ]
+classes = [
+	"Window", "Terminal", "History", "Line", "Run", "Style",
+	"UTF8",
+	]
 
 files = []
 for class_name in classes:
