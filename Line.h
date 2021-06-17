@@ -16,6 +16,10 @@ class Line {
 			return runs.empty();
 			}
 
+		// As an collection, it gives the runs.
+		std::list<Run*>::iterator	begin() { return runs.begin(); }
+		std::list<Run*>::iterator end()	{ return runs.end(); }
+
 	protected:
 		std::list<Run*>	runs;
 	};

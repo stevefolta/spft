@@ -1,6 +1,9 @@
 #include "TermWindow.h"
 #include "Terminal.h"
 #include "History.h"
+#include "Line.h"
+#include "Run.h"
+#include "Settings.h"
 #include <X11/cursorfont.h>
 #include <stdexcept>
 #include <string.h>
@@ -8,6 +11,8 @@
 
 TermWindow::TermWindow()
 {
+	top_line = 0;
+
 	terminal = new Terminal();
 	history = new History();
 
@@ -52,6 +57,7 @@ TermWindow::TermWindow()
 	XSetForeground(display, gc, attributes.background_pixel);
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
 
+	xft_font = XftFontOpenName(display, screen, settings.font_spec.c_str());
 	xft_draw = XftDrawCreate(display, pixmap, visual, XDefaultColormap(display, screen));
 
 	Cursor cursor = XCreateFontCursor(display, XC_xterm);
@@ -89,6 +95,7 @@ TermWindow::~TermWindow()
 	delete history;
 
 	XftDrawDestroy(xft_draw);
+	XftFontClose(display, xft_font);
 	XFreeGC(display, gc);
 	XFreePixmap(display, pixmap);
 	XDestroyWindow(display, window);
@@ -134,7 +141,49 @@ void TermWindow::tick()
 
 void TermWindow::draw()
 {
-	/***/
+	// Clear the background.
+	XSetForeground(display, gc, attributes.background_pixel);
+	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
+
+	XRenderColor fg_color;
+	fg_color.alpha = 0xFFFF;
+	fg_color.red = 0;
+	fg_color.green = 0;
+	fg_color.blue = 0;
+	XftColor xft_color;
+	XftColorAllocValue(
+		display,
+		XDefaultVisual(display, screen), XDefaultColormap(display, screen),
+		&fg_color, &xft_color);
+
+	if (top_line < history->get_first_line())
+		top_line = history->get_first_line();
+	int64_t num_lines = height / xft_font->height;
+	int64_t last_line = top_line + num_lines - 1;
+	if (last_line > history->get_last_line())
+		last_line = history->get_last_line();
+	int y = xft_font->ascent;
+	for (int64_t which_line = top_line; which_line <= last_line; ++which_line) {
+		int x = 0;
+		Line* line = history->line(which_line);
+		for (auto run: *line) {
+			XftDrawString8(
+				xft_draw, &xft_color, xft_font,
+				x, y,
+				(const FcChar8*) run->bytes(), strlen(run->bytes()));
+			}
+		y += xft_font->height;
+		}
+
+	XftColorFree(
+		display,
+		XDefaultVisual(display, screen), XDefaultColormap(display, screen),
+		&xft_color);
+
+	// Copy to the screen.
+	XCopyArea(
+		display, pixmap, window, gc, 0, 0, width, height, 0, 0);
+	XFlush(display);
 }
 
 

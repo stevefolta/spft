@@ -6,6 +6,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
+#include <stdint.h>
 
 class Terminal;
 class History;
@@ -31,7 +32,10 @@ class TermWindow {
 		GC gc;
 		Drawable pixmap;
 		XftDraw* xft_draw;
+		XftFont* xft_font;
 		unsigned int width, height;
+
+		int64_t top_line;
 	};
 
 

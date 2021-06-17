@@ -18,6 +18,9 @@ class History {
 		int	add_input(const char* input, int length);
 			// Returns number of bytes consumed.
 
+		int64_t	get_first_line() { return first_line; }
+		int64_t	get_last_line() { return last_line; }
+
 	private:
 		Style	current_style;
 		bool	at_end_of_line;

@@ -5,7 +5,8 @@ X11_TOP := /usr/X11R6
 
 -include Makefile.local
 
-SOURCES := TermWindow.cpp Terminal.cpp History.cpp Line.cpp Run.cpp UTF8.cpp main.cpp
+SOURCES := TermWindow.cpp Terminal.cpp History.cpp Line.cpp Run.cpp
+SOURCES += Settings.cpp UTF8.cpp main.cpp
 
 OBJECTS = $(foreach source,$(SOURCES),$(OBJECTS_DIR)/$(source:.cpp=.o))
 OBJECTS_SUBDIRS = $(foreach dir,$(SUBDIRS),$(OBJECTS_DIR)/$(dir))
