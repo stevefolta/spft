@@ -91,7 +91,7 @@ TermWindow::TermWindow()
 		}
 	resized(new_width, new_height);
 
-	const char* message = "Hello world...\nTesting...";
+	const char* message = "Hello world...\nTesting...\nÜTF-∞";
 	history->add_input(message, strlen(message));
 }
 
@@ -179,7 +179,7 @@ void TermWindow::draw()
 		int x = 0;
 		Line* line = history->line(which_line);
 		for (auto run: *line) {
-			XftDrawString8(
+			XftDrawStringUtf8(
 				xft_draw, &xft_color, xft_font,
 				x, y,
 				(const FcChar8*) run->bytes(), strlen(run->bytes()));
