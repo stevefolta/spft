@@ -54,7 +54,10 @@ int History::add_input(const char* input, int length)
 				break;
 
 			case '\n':
-				//***
+				if (current_line >= last_line)
+					new_line();
+				else
+					current_line += 1;
 				break;
 
 			default:
@@ -83,6 +86,26 @@ void History::add_to_current_line(const char* start, const char* end)
 		cur_line->append_characters(start, end - start, current_style);
 	else {
 		//*** TODO
+		}
+}
+
+
+void History::new_line()
+{
+	last_line += 1;
+	current_line = last_line;
+	if (last_line >= capacity) {
+		// History is full, we'll recycle the previous first line.
+		lines[first_line_index]->clear();
+		first_line += 1;
+		first_line_index += 1;
+		if (first_line_index >= capacity)
+			first_line_index = 0;
+		}
+	else {
+		// We may not have allocated the Line yet.
+		if (lines[last_line] == nullptr)
+			lines[last_line] = new Line();
 		}
 }
 

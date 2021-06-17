@@ -12,6 +12,7 @@ class Line {
 		~Line();
 
 		void	append_characters(const char* bytes, int length, Style style);
+		void	clear();
 		bool	empty()  {
 			return runs.empty();
 			}

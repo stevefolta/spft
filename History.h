@@ -24,11 +24,15 @@ class History {
 	private:
 		Style	current_style;
 		bool	at_end_of_line;
+		// Lines are numbered from the beginning of the session; line numbers are
+		// never reused (that's why we use 64 bits for them).  "first_line_index"
+		// is the index of "first_line" within the "lines" array.
 		int64_t	capacity, first_line, first_line_index, last_line;
 		int64_t	current_line;
 		Line**	lines;
 
 		void	add_to_current_line(const char* start, const char* end);
+		void	new_line();
 	};
 
 

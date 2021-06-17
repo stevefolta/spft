@@ -27,5 +27,13 @@ void Line::append_characters(const char* bytes, int length, Style style)
 }
 
 
+void Line::clear()
+{
+	for (auto& run: runs)
+		delete run;
+	runs.clear();
+}
+
+
 
 

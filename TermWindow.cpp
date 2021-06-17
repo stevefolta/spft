@@ -91,7 +91,7 @@ TermWindow::TermWindow()
 		}
 	resized(new_width, new_height);
 
-	const char* message = "Hello world...";
+	const char* message = "Hello world...\nTesting...";
 	history->add_input(message, strlen(message));
 }
 
