@@ -26,7 +26,7 @@ CFLAGS += -g
 CFLAGS += $(foreach switch,$(SWITCHES),-D$(switch))
 
 CFLAGS += -std=c++11 -I$(X11_INCLUDES)
-LINK_FLAGS += -L$(X11_LIBS) -lX11 -lXft
+LINK_FLAGS += -L$(X11_LIBS) -lX11 -lXft -lutil
 
 $(OBJECTS_DIR)/%.o: %.cpp
 	@echo Compiling $<...

@@ -6,6 +6,7 @@
 
 struct Settings {
 	std::string	font_spec;
+	std::string	term_name;
 	};
 extern Settings settings;
 

@@ -2,5 +2,6 @@
 
 Settings settings = {
 	"Helvetica Neue:style=Light:size=18",
+	"xterm",
 	};
 

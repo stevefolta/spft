@@ -14,8 +14,8 @@ TermWindow::TermWindow()
 	top_line = 0;
 	closed = false;
 
-	terminal = new Terminal();
 	history = new History();
+	terminal = new Terminal(history);
 
 	display = XOpenDisplay(nullptr);
 	if (display == nullptr)
@@ -90,9 +90,6 @@ TermWindow::TermWindow()
 			}
 		}
 	resized(new_width, new_height);
-
-	const char* message = "Hello world...\nTesting...\nÜTF-∞";
-	history->add_input(message, strlen(message));
 }
 
 
@@ -111,7 +108,7 @@ TermWindow::~TermWindow()
 
 bool TermWindow::is_done()
 {
-	return closed;
+	return closed || terminal->is_done();
 }
 
 
@@ -123,9 +120,19 @@ void TermWindow::tick()
 		FD_ZERO(&fds);
 		int xfd = XConnectionNumber(display);
 		FD_SET(xfd, &fds);
-		int result = select(xfd + 1, &fds, NULL, NULL, NULL);
+		int terminal_fd = terminal->get_terminal_fd();
+		FD_SET(terminal_fd, &fds);
+		int max_fd = xfd;
+		if (terminal_fd > max_fd)
+			max_fd = terminal_fd;
+		int result = select(max_fd + 1, &fds, NULL, NULL, NULL);
 		if (result < 0 && errno != EINTR)
 			throw std::runtime_error("select() failed");
+
+		if (FD_ISSET(terminal_fd, &fds)) {
+			terminal->tick();
+			draw();
+			}
 		}
 
 	while (XPending(display)) {
@@ -199,8 +206,10 @@ void TermWindow::draw()
 }
 
 
-void TermWindow::resized(int width, int height)
+void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 {
+	width = new_width;
+	height = new_height;
 	XFreePixmap(display, pixmap);
 	pixmap = XCreatePixmap(display, window, width, height, DefaultDepth(display, screen));
 	XftDrawChange(xft_draw, pixmap);

@@ -20,7 +20,7 @@ class TermWindow {
 		bool	is_done();
 		void	tick();
 		void	draw();
-		void	resized(int width, int height);
+		void	resized(unsigned int new_width, unsigned int new_height);
 
 	protected:
 		bool	closed;
