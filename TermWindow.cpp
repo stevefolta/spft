@@ -12,6 +12,7 @@
 TermWindow::TermWindow()
 {
 	top_line = 0;
+	closed = false;
 
 	terminal = new Terminal();
 	history = new History();
@@ -57,11 +58,17 @@ TermWindow::TermWindow()
 	XSetForeground(display, gc, attributes.background_pixel);
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
 
+	// Xft.
 	xft_font = XftFontOpenName(display, screen, settings.font_spec.c_str());
 	xft_draw = XftDrawCreate(display, pixmap, visual, XDefaultColormap(display, screen));
 
+	// Cursor.
 	Cursor cursor = XCreateFontCursor(display, XC_xterm);
 	XDefineCursor(display, window, cursor);
+
+	// Window manager.
+	wm_delete_window_atom = XInternAtom(display, "WM_DELETE_WINDOW", False);
+	XSetWMProtocols(display, window, &wm_delete_window_atom, 1);
 
 	XMapWindow(display, window);
 	XSync(display, False);
@@ -104,8 +111,7 @@ TermWindow::~TermWindow()
 
 bool TermWindow::is_done()
 {
-	/*** TODO ***/
-	return false;
+	return closed;
 }
 
 
@@ -133,6 +139,12 @@ void TermWindow::tick()
 				break;
 			case Expose:
 				draw();
+				break;
+			case ClientMessage:
+				if ((Atom) event.xclient.data.l[0] == wm_delete_window_atom) {
+					terminal->hang_up();
+					closed = true;
+					}
 				break;
 			}
 		}

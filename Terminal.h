@@ -3,6 +3,7 @@
 
 class Terminal {
 	public:
+		void	hang_up();
 
 	private:
 	};

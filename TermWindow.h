@@ -23,6 +23,7 @@ class TermWindow {
 		void	resized(int width, int height);
 
 	protected:
+		bool	closed;
 		Terminal* terminal;
 		History* history;
 		Display*	display;
@@ -36,6 +37,8 @@ class TermWindow {
 		unsigned int width, height;
 
 		int64_t top_line;
+
+		Atom wm_delete_window_atom;
 	};
 
 
