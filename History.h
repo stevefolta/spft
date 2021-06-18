@@ -29,10 +29,16 @@ class History {
 		// is the index of "first_line" within the "lines" array.
 		int64_t	capacity, first_line, first_line_index, last_line;
 		int64_t	current_line;
+		int	current_column;
 		Line**	lines;
 
 		void	add_to_current_line(const char* start, const char* end);
 		void	new_line();
+
+		const char*	parse_csi(const char* p, const char* end);
+		const char*	parse_dcs(const char* p, const char* end);
+		const char*	parse_osc(const char* p, const char* end);
+		const char*	parse_st_string(const char* p, const char* end, bool can_end_with_bel = false);
 	};
 
 
