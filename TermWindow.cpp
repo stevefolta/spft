@@ -227,10 +227,50 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 void TermWindow::key_down(XKeyEvent* event)
 {
 	char buffer[64];
-	KeySym keySym;
+	KeySym keySym = 0;
 	int length = XLookupString(event, buffer, sizeof(buffer), &keySym, NULL);
-	if (length > 0)
+
+	// Shift-PgUp/PgDown.
+	if ((event->state & ShiftMask) != 0) {
+		int64_t num_lines = displayed_lines();
+		int64_t half_page = num_lines / 2 + 1;
+		if (keySym == XK_Page_Up) {
+			if (top_line < 0) {
+				// Scroll up from the bottom.
+				if (history->get_last_line() < num_lines) {
+					// All the lines still fit on the screen; don't change anything.
+					return;
+					}
+				top_line = history->get_last_line() - num_lines + 1 - half_page;
+				if (top_line < history->get_first_line())
+					top_line = history->get_first_line();
+				}
+			else {
+				// Scroll up from where we are.
+				top_line -= half_page;
+				if (top_line < history->get_first_line())
+					top_line = history->get_first_line();
+				}
+			draw();
+			return;
+			}
+		else if (keySym == XK_Page_Down) {
+			if (top_line >= 0) {
+				top_line += half_page;
+				if (top_line > history->get_last_line() - num_lines) {
+					// We've reached the end.
+					top_line = -1;
+					}
+				draw();
+				return;
+				}
+			}
+		}
+
+	if (length > 0) {
 		terminal->send(buffer, length);
+		scroll_to_bottom();
+		}
 }
 
 
