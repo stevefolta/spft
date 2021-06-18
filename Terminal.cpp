@@ -99,7 +99,7 @@ void Terminal::tick()
 }
 
 
-void Terminal::send(char* data, int length)
+void Terminal::send(const char* data, int length)
 {
 	if (length == -1)
 		length = strlen(data);

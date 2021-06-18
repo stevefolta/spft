@@ -267,6 +267,26 @@ void TermWindow::key_down(XKeyEvent* event)
 			}
 		}
 
+	// Special keys that XLookupString() doesn't handle.
+	struct KeyMapping {
+		KeySym	keySym;
+		const char*	str;
+		};
+	KeyMapping keyMappings[] = {
+		{ XK_Up, "\x1B[A" },
+		{ XK_Down, "\x1B[B" },
+		{ XK_Left, "\x1B[D" },
+		{ XK_Right, "\x1B[C" },
+		};
+	const KeyMapping* mappingsEnd = &keyMappings[sizeof(keyMappings) / sizeof(keyMappings[0])];
+	for (KeyMapping* mapping = keyMappings; mapping < mappingsEnd; ++mapping) {
+		if (keySym == mapping->keySym) {
+			terminal->send(mapping->str);
+			scroll_to_bottom();
+			}
+		}
+
+	// The normal case is just to send what XLookupString() gave us.
 	if (length > 0) {
 		terminal->send(buffer, length);
 		scroll_to_bottom();
