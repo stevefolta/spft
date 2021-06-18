@@ -49,4 +49,8 @@ $(OBJECTS_DIR):
 runnit: $(PROGRAM)
 	@./$(PROGRAM) $(RUN_ARGS)
 
+.PHONY: clean
+clean:
+	rm -r $(OBJECTS_DIR)
+
 

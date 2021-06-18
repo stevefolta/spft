@@ -6,6 +6,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <pwd.h>
+#include <time.h>
 #include <stdexcept>
 
 
@@ -68,6 +69,9 @@ void Terminal::tick()
 	// We assume this won't be called unless select() has indicated there is
 	// data to read.
 
+	if (child_died)
+		return;
+
 	// Read.
 	int result =
 		read(terminal_fd, buffer + prebuffered_bytes, BUFSIZ - prebuffered_bytes);
@@ -75,8 +79,16 @@ void Terminal::tick()
 		child_died = true;
 		return;
 		}
-	else if (result < 0)
+	else if (result < 0) {
+		// Wait a moment before checking child_died again.
+		struct timespec sleep_spec = { 0, 1000000 };
+		nanosleep(&sleep_spec, nullptr);
+		if (child_died) {
+			// This is a race condition; the child died *while* we were reading.
+			return;
+			}
 		throw std::runtime_error("read() failed");
+		}
 
 	// Give it to the History.
 	int length = prebuffered_bytes + result;
@@ -84,6 +96,22 @@ void Terminal::tick()
 	length -= bytes_consumed;
 	if (length > 0)
 		memmove(buffer, buffer + bytes_consumed, length);
+}
+
+
+void Terminal::send(char* data, int length)
+{
+	if (length == -1)
+		length = strlen(data);
+	// st makes sure not to send more than 256 bytes at a time, because it might
+	// be connected to a modem.  We don't bother with that (currently).
+	while (length > 0) {
+		ssize_t bytes_written = write(terminal_fd, data, length);
+		if (bytes_written < 0)
+			throw std::runtime_error("write() failed");
+		data += bytes_written;
+		length -= bytes_written;
+		}
 }
 
 

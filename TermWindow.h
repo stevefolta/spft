@@ -39,6 +39,8 @@ class TermWindow {
 		int64_t top_line;
 
 		Atom wm_delete_window_atom;
+
+		void	key_down(XKeyEvent* event);
 	};
 
 

@@ -153,6 +153,9 @@ void TermWindow::tick()
 					closed = true;
 					}
 				break;
+			case KeyPress:
+				key_down(&event.xkey);
+				break;
 			}
 		}
 }
@@ -215,6 +218,16 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 	XftDrawChange(xft_draw, pixmap);
 	XSetForeground(display, gc, attributes.background_pixel);
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
+}
+
+
+void TermWindow::key_down(XKeyEvent* event)
+{
+	char buffer[64];
+	KeySym keySym;
+	int length = XLookupString(event, buffer, sizeof(buffer), &keySym, NULL);
+	if (length > 0)
+		terminal->send(buffer, length);
 }
 
 

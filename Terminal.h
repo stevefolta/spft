@@ -14,6 +14,7 @@ class Terminal {
 		bool	is_done();
 		int	get_terminal_fd() { return terminal_fd; }
 		void	tick();
+		void	send(char* data, int length = -1);
 		void	hang_up();
 
 	private:
