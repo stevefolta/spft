@@ -119,11 +119,11 @@ int History::add_input(const char* input, int length)
 					}
 				break;
 
-			case '\n':
+			case '\r':
 				current_column = 0;
 				break;
 
-			case '\r':
+			case '\n':
 				if (current_line >= last_line)
 					new_line();
 				else
