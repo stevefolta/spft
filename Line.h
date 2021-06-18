@@ -21,6 +21,11 @@ class Line {
 		std::list<Run*>::iterator	begin() { return runs.begin(); }
 		std::list<Run*>::iterator end()	{ return runs.end(); }
 
+		void	clear_to_end_from(int column);
+		void	clear_from_beginning_to(int column);
+		void	prepend_spaces(int num_spaces, Style style);
+		void	delete_characters(int column, int num_chars);
+
 	protected:
 		std::list<Run*>	runs;
 	};

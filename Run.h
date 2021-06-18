@@ -6,6 +6,8 @@
 class Run {
 	public:
 		Run(Style style);
+		Run(char* initial_characters, Style style);
+			// Takes ownership of "initial characters", which must be null-terminated.
 		~Run();
 
 		Style	style;
@@ -13,6 +15,10 @@ class Run {
 
 		int	num_characters();
 		void	append_characters(const char* new_chars, int num_bytes);
+
+		void	shorten_to(int new_length);
+		void	delete_first_characters(int num_chars);
+		void	delete_characters(int column, int num_chars);
 
 	protected:
 		char*	characters;

@@ -130,6 +130,17 @@ int History::add_input(const char* input, int length)
 					current_line += 1;
 				break;
 
+			case '\b':
+				if (current_column > 0) {
+					line(current_line)->delete_characters(current_column - 1, 1);
+					current_column -= 1;
+					}
+				break;
+
+			case '\a':
+				// BEL.  Ignore.
+				break;
+
 			default:
 				// Normal run of characters.
 				// TODO: Don't consume partial UTF8 character at end.
@@ -264,6 +275,29 @@ const char* History::parse_csi(const char* p, const char* end)
 			current_column -= args[0] ? args[0] : 1;
 			if (current_column < 0)
 				current_column = 0;
+			break;
+
+		case 'K':
+			// Erase in Line.
+			{
+			Line* cur_line = line(current_line);
+			if (args[0] == 0)
+				cur_line->clear_to_end_from(current_column);
+			else if (args[0] == 1) {
+				cur_line->clear_from_beginning_to(current_column);
+				cur_line->prepend_spaces(current_column, current_style);
+				}
+			else if (args[0] == 2) {
+				cur_line->clear();
+				if (current_column > 0)
+					cur_line->prepend_spaces(current_column, current_style);
+				}
+			}
+			break;
+
+		case 'P':
+			// Delete Character (DCH).
+			line(current_line)->delete_characters(current_column, args[0] ? args[0] : 1);
 			break;
 
 		default:
