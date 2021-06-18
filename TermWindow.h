@@ -41,6 +41,7 @@ class TermWindow {
 		Atom wm_delete_window_atom;
 
 		void	key_down(XKeyEvent* event);
+		int	displayed_lines() { return height / xft_font->height; }
 	};
 
 

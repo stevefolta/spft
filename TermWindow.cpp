@@ -11,7 +11,7 @@
 
 TermWindow::TermWindow()
 {
-	top_line = 0;
+	top_line = -1;
 	closed = false;
 
 	history = new History();
@@ -173,19 +173,25 @@ void TermWindow::draw()
 	fg_color.green = 0;
 	fg_color.blue = 0;
 	XftColor xft_color;
+	Visual* visual = XDefaultVisual(display, screen);
+	Colormap colormap = XDefaultColormap(display, screen);
 	XftColorAllocValue(
-		display,
-		XDefaultVisual(display, screen), XDefaultColormap(display, screen),
+		display, visual, colormap,
 		&fg_color, &xft_color);
 
-	if (top_line < history->get_first_line())
-		top_line = history->get_first_line();
-	int64_t num_lines = height / xft_font->height;
-	int64_t last_line = top_line + num_lines - 1;
+	int64_t num_lines = displayed_lines();
+	int64_t effective_top_line = top_line;
+	if (effective_top_line < 0) {
+		// Negative "top_line" means "bottom".
+		effective_top_line = history->get_last_line() - num_lines + 1;
+		}
+	if (effective_top_line < history->get_first_line())
+		effective_top_line = history->get_first_line();
+	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
 	int y = xft_font->ascent;
-	for (int64_t which_line = top_line; which_line <= last_line; ++which_line) {
+	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
 		int x = 0;
 		Line* line = history->line(which_line);
 		for (auto run: *line) {
@@ -197,10 +203,7 @@ void TermWindow::draw()
 		y += xft_font->height;
 		}
 
-	XftColorFree(
-		display,
-		XDefaultVisual(display, screen), XDefaultColormap(display, screen),
-		&xft_color);
+	XftColorFree(display, visual, colormap, &xft_color);
 
 	// Copy to the screen.
 	XCopyArea(
