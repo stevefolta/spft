@@ -2,4 +2,5 @@ spft
 objects
 Makefile.local
 tags
+*.log
 

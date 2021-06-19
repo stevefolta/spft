@@ -140,6 +140,8 @@ void Line::clear_to_end_from(int column)
 			else if (run_num_chars > column) {
 				(*run)->shorten_to(column);
 				deleting = true;
+				first_to_delete = run;
+				first_to_delete++;
 				}
 			column -= run_num_chars;
 			}
