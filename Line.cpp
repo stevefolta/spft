@@ -36,6 +36,15 @@ void Line::clear()
 }
 
 
+int Line::num_characters()
+{
+	int num_chars = 0;
+	for (auto& run: runs)
+		num_chars += run->num_characters();
+	return num_chars;
+}
+
+
 void Line::clear_to_end_from(int column)
 {
 	// Shorten the run containing the column, and delete all runs after it.
@@ -89,6 +98,20 @@ void Line::prepend_spaces(int num_spaces, Style style)
 		spaces[i] = ' ';
 	spaces[num_spaces] = 0;
 	runs.push_front(new Run(spaces, style));
+}
+
+
+void Line::append_spaces(int num_spaces, Style style)
+{
+	if (runs.empty() || runs.back()->style == style)
+		runs.back()->append_spaces(num_spaces);
+	else {
+		char* spaces = (char*) malloc(num_spaces + 1);
+		for (int i = 0; i < num_spaces; ++i)
+			spaces[i] = ' ';
+		spaces[num_spaces] = 0;
+		runs.push_back(new Run(spaces, style));
+		}
 }
 
 

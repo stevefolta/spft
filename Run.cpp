@@ -37,11 +37,24 @@ void Run::append_characters(const char* new_chars, int num_bytes)
 		old_length = strlen(characters);
 		characters = (char*) realloc(characters, old_length + num_bytes + 1);
 		}
-	else {
+	else
 		characters = (char*) malloc(num_bytes + 1);
-		}
 	memcpy(characters + old_length, new_chars, num_bytes);
 	characters[old_length + num_bytes] = 0;
+}
+
+
+void Run::append_spaces(int num_spaces)
+{
+	int old_length = 0;
+	if (characters) {
+		old_length = strlen(characters);
+		characters = (char*) realloc(characters, old_length + num_spaces + 1);
+		}
+	else
+		characters = (char*) malloc(num_spaces + 1);
+	memset(characters + old_length, ' ', num_spaces);
+	characters[old_length + num_spaces] = 0;
 }
 
 

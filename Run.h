@@ -15,6 +15,7 @@ class Run {
 
 		int	num_characters();
 		void	append_characters(const char* new_chars, int num_bytes);
+		void	append_spaces(int num_spaces);
 
 		void	shorten_to(int new_length);
 		void	delete_first_characters(int num_chars);

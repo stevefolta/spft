@@ -266,8 +266,14 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'C':
 			// Cursor forward.
+			{
 			current_column += args[0] ? args[0] : 1;
-			//*** TODO: beyond end of line.
+			// If we moved beyond the end of the line, add some spaces.
+			Line* cur_line = line(current_line);
+			int cur_length = cur_line->num_characters();
+			if (current_column > cur_length)
+				cur_line->append_spaces(current_column - cur_length, current_style);
+			}
 			break;
 
 		case 'D':

@@ -16,6 +16,7 @@ class Line {
 		bool	empty()  {
 			return runs.empty();
 			}
+		int	num_characters();
 
 		// As an collection, it gives the runs.
 		std::list<Run*>::iterator	begin() { return runs.begin(); }
@@ -24,6 +25,7 @@ class Line {
 		void	clear_to_end_from(int column);
 		void	clear_from_beginning_to(int column);
 		void	prepend_spaces(int num_spaces, Style style);
+		void	append_spaces(int num_spaces, Style style);
 		void	delete_characters(int column, int num_chars);
 
 	protected:

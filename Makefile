@@ -53,4 +53,8 @@ runnit: $(PROGRAM)
 clean:
 	rm -r $(OBJECTS_DIR)
 
+.PHONY: tags
+tags:
+	ctags -R .
+
 
