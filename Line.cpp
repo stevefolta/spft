@@ -1,6 +1,9 @@
 #include "Line.h"
 #include "Run.h"
+#include "UTF8.h"
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 
 Line::Line()
@@ -25,6 +28,80 @@ void Line::append_characters(const char* bytes, int length, Style style)
 	else
 		last_run = runs.back();
 	last_run->append_characters(bytes, length);
+}
+
+
+void Line::replace_characters(int column, const char* bytes, int length, Style style)
+{
+	// First insert the new characters.
+	int num_chars = UTF8::num_characters(bytes, length);
+	int columns_left = column;
+	int already_deleted_chars = 0;
+	for (auto run = runs.begin(); run != runs.end(); ++run) {
+		int old_run_chars = (*run)->num_characters();
+		if (columns_left < old_run_chars) {
+			if ((*run)->style == style) {
+				(*run)->replace_characters(columns_left, bytes, length);
+				if (columns_left + num_chars <= old_run_chars) {
+					// The replacement was entirely within one run; we're done.
+					return;
+					}
+				already_deleted_chars = old_run_chars - columns_left;
+				}
+			else {
+				auto insert_before = runs.end();
+				if (columns_left == 0) {
+					// New characters go rignt before this run.
+					insert_before = run;
+					}
+				else if (columns_left + num_chars < old_run_chars) {
+					// The replacement is entirely within one run; we'll need to split it.
+					// Create the new run.
+					const char* run_bytes = (*run)->bytes();
+					int run_bytes_length = strlen(run_bytes);
+					const char* src_bytes_start =
+						run_bytes +
+						UTF8::bytes_for_n_characters(
+							run_bytes, run_bytes_length, columns_left + num_chars);
+					int src_length = run_bytes + run_bytes_length - src_bytes_start;
+					Run* new_run = new Run((*run)->style);
+					new_run->append_characters(src_bytes_start, src_length);
+					// Add it.
+					auto where = run;
+					where++;
+					runs.insert(where, new_run);
+					// Trim the existing run.
+					(*run)->shorten_to(columns_left);
+					already_deleted_chars = old_run_chars - columns_left;
+					assert(already_deleted_chars == num_chars);
+					// New characters go before the next run (the one we just split
+					// off).
+					insert_before = run;
+					insert_before++;
+					}
+				else {
+					// Replacing the end of this run (and maybe some more after
+					// that).
+					(*run)->shorten_to(columns_left);
+					already_deleted_chars = old_run_chars - columns_left;
+					// New characters go before the next run.
+					insert_before = run;
+					insert_before++;
+					}
+				// Create new run.
+				Run* new_run = new Run(style);
+				new_run->append_characters(bytes, length);
+				// Add it.
+				runs.insert(insert_before, new_run);
+				}
+			break;
+			}
+		columns_left -= old_run_chars;
+		}
+
+	// Then delete any leftover old ones.
+	if (already_deleted_chars < num_chars)
+		delete_characters(column + num_chars, num_chars - already_deleted_chars);
 }
 
 

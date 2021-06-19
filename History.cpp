@@ -171,7 +171,8 @@ void History::add_to_current_line(const char* start, const char* end)
 	if (at_end_of_line)
 		cur_line->append_characters(start, end - start, current_style);
 	else {
-		//*** TODO
+		cur_line->replace_characters(
+			current_column, start, end - start, current_style);
 		}
 }
 
@@ -271,8 +272,12 @@ const char* History::parse_csi(const char* p, const char* end)
 			// If we moved beyond the end of the line, add some spaces.
 			Line* cur_line = line(current_line);
 			int cur_length = cur_line->num_characters();
-			if (current_column > cur_length)
+			if (current_column > cur_length) {
 				cur_line->append_spaces(current_column - cur_length, current_style);
+				at_end_of_line = true;
+				}
+			else if (current_column == cur_length)
+				at_end_of_line = true;
 			}
 			break;
 
@@ -281,6 +286,7 @@ const char* History::parse_csi(const char* p, const char* end)
 			current_column -= args[0] ? args[0] : 1;
 			if (current_column < 0)
 				current_column = 0;
+			at_end_of_line = false;
 			break;
 
 		case 'K':

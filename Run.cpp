@@ -44,6 +44,41 @@ void Run::append_characters(const char* new_chars, int num_bytes)
 }
 
 
+void Run::replace_characters(int column, const char* new_chars, int num_bytes)
+{
+	int old_length = 0;
+	int start_index = 0;
+	int replaced_bytes = 0;
+	if (characters) {
+		old_length = strlen(characters);
+		start_index = UTF8::bytes_for_n_characters(characters, old_length, column);
+		int num_chars = UTF8::num_characters(new_chars, num_bytes);
+		replaced_bytes =
+			UTF8::bytes_for_n_characters(
+				characters + start_index, old_length - start_index, num_chars);
+		}
+	char* new_bytes = (char*) malloc(old_length + num_bytes + 1);
+
+	// Build the new string.
+	// Initial old characters.
+	if (start_index > 0)
+		memcpy(new_bytes, characters, start_index);
+	// New characters.
+	memcpy(new_bytes + start_index, new_chars, num_bytes);
+	// Any bytes left after the replaced characters.
+	int bytes_left = old_length - (start_index + replaced_bytes);
+	if (bytes_left > 0) {
+		memcpy(
+			new_bytes + start_index + num_bytes,
+			characters + start_index + replaced_bytes,
+			bytes_left);
+		}
+
+	free(characters);
+	characters = new_bytes;
+}
+
+
 void Run::append_spaces(int num_spaces)
 {
 	int old_length = 0;

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
 print('foo\x1B[Cbar')
+print('foo xar\x1B[D\x1B[D\x1B[Db')
 
 
