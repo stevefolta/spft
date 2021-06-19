@@ -126,8 +126,10 @@ int History::add_input(const char* input, int length)
 			case '\n':
 				if (current_line >= last_line)
 					new_line();
-				else
+				else {
 					current_line += 1;
+					update_at_end_of_line();
+					}
 				break;
 
 			case '\b':
@@ -173,6 +175,7 @@ void History::add_to_current_line(const char* start, const char* end)
 	else {
 		cur_line->replace_characters(
 			current_column, start, end - start, current_style);
+		update_at_end_of_line();
 		}
 }
 
@@ -194,6 +197,13 @@ void History::new_line()
 		if (lines[last_line] == nullptr)
 			lines[last_line] = new Line();
 		}
+	at_end_of_line = true;
+}
+
+
+void History::update_at_end_of_line()
+{
+	at_end_of_line = (current_column >= line(current_line)->num_characters());
 }
 
 
@@ -256,6 +266,7 @@ const char* History::parse_csi(const char* p, const char* end)
 			current_line -= args[0] ? args[0] : 1;
 			if (current_line < first_line)
 				current_line = first_line;
+			update_at_end_of_line();
 			break;
 
 		case 'B':
@@ -263,6 +274,7 @@ const char* History::parse_csi(const char* p, const char* end)
 			current_line += args[0] ? args[0] : 1;
 			if (current_line > last_line)
 				current_line = last_line;
+			update_at_end_of_line();
 			break;
 
 		case 'C':
@@ -293,16 +305,20 @@ const char* History::parse_csi(const char* p, const char* end)
 			// Erase in Line.
 			{
 			Line* cur_line = line(current_line);
-			if (args[0] == 0)
+			if (args[0] == 0) {
 				cur_line->clear_to_end_from(current_column);
+				at_end_of_line = true;
+				}
 			else if (args[0] == 1) {
 				cur_line->clear_from_beginning_to(current_column);
 				cur_line->prepend_spaces(current_column, current_style);
+				update_at_end_of_line();
 				}
 			else if (args[0] == 2) {
 				cur_line->clear();
 				if (current_column > 0)
 					cur_line->prepend_spaces(current_column, current_style);
+				at_end_of_line = true;
 				}
 			}
 			break;
@@ -310,6 +326,7 @@ const char* History::parse_csi(const char* p, const char* end)
 		case 'P':
 			// Delete Character (DCH).
 			line(current_line)->delete_characters(current_column, args[0] ? args[0] : 1);
+			update_at_end_of_line();
 			break;
 
 		default:

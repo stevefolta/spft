@@ -34,6 +34,7 @@ class History {
 
 		void	add_to_current_line(const char* start, const char* end);
 		void	new_line();
+		void	update_at_end_of_line();
 
 		const char*	parse_csi(const char* p, const char* end);
 		const char*	parse_dcs(const char* p, const char* end);

@@ -6,7 +6,7 @@ class Style {
 		char	flags;
 		unsigned char	color;
 
-		Style() : flags(0) {}
+		Style() : flags(0), color(0) {}
 
 		bool	operator==(Style& other) {
 			return flags == other.flags && color == other.color;

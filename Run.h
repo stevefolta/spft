@@ -3,6 +3,7 @@
 
 #include "Style.h"
 
+
 class Run {
 	public:
 		Run(Style style);

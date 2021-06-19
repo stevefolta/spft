@@ -180,7 +180,7 @@ void Line::prepend_spaces(int num_spaces, Style style)
 
 void Line::append_spaces(int num_spaces, Style style)
 {
-	if (runs.empty() || runs.back()->style == style)
+	if (!runs.empty() && runs.back()->style == style)
 		runs.back()->append_spaces(num_spaces);
 	else {
 		char* spaces = (char*) malloc(num_spaces + 1);

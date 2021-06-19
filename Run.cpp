@@ -72,7 +72,10 @@ void Run::replace_characters(int column, const char* new_chars, int num_bytes)
 			new_bytes + start_index + num_bytes,
 			characters + start_index + replaced_bytes,
 			bytes_left);
+		new_bytes[start_index + num_bytes + bytes_left] = 0;
 		}
+	else
+		new_bytes[start_index + num_bytes] = 0;
 
 	free(characters);
 	characters = new_bytes;
