@@ -4,7 +4,7 @@ import subprocess, os
 
 classes = [
 	"TermWindow", "Terminal", "History", "Line", "Run", "Style",
-	"Settings", "UTF8",
+	"Settings", "UTF8", "Colors"
 	]
 
 files = []

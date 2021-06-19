@@ -3,6 +3,7 @@
 #include "History.h"
 #include "Line.h"
 #include "Run.h"
+#include "Colors.h"
 #include "Settings.h"
 #include <X11/cursorfont.h>
 #include <stdexcept>
@@ -22,6 +23,7 @@ TermWindow::TermWindow()
 		throw std::runtime_error("Can't open display");
 	screen = XDefaultScreen(display);
 	Visual* visual = XDefaultVisual(display, screen);
+	colors.init(display);
 
 	attributes.background_pixel = WhitePixel(display, screen);
 	attributes.border_pixel = BlackPixel(display, screen);
@@ -164,21 +166,11 @@ void TermWindow::tick()
 void TermWindow::draw()
 {
 	// Clear the background.
-	XSetForeground(display, gc, attributes.background_pixel);
-	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
+	XftDrawRect(
+		xft_draw, colors.xft_color(settings.default_background_color),
+		0, 0, width, height);
 
-	XRenderColor fg_color;
-	fg_color.alpha = 0xFFFF;
-	fg_color.red = 0;
-	fg_color.green = 0;
-	fg_color.blue = 0;
-	XftColor xft_color;
-	Visual* visual = XDefaultVisual(display, screen);
-	Colormap colormap = XDefaultColormap(display, screen);
-	XftColorAllocValue(
-		display, visual, colormap,
-		&fg_color, &xft_color);
-
+	// Draw the lines.
 	int64_t num_lines = displayed_lines();
 	int64_t effective_top_line = top_line;
 	if (effective_top_line < 0) {
@@ -195,15 +187,29 @@ void TermWindow::draw()
 		int x = 0;
 		Line* line = history->line(which_line);
 		for (auto run: *line) {
+			int num_bytes = strlen(run->bytes());
+			XGlyphInfo glyph_info;
+			XftTextExtentsUtf8(
+				display, xft_font,
+				(const FcChar8*) run->bytes(), num_bytes, &glyph_info);
+
+			// Draw the run background (if it's not the default).
+			if (run->style.background_color != settings.default_background_color) {
+				XftDrawRect(
+					xft_draw, colors.xft_color(run->style.background_color),
+					x, y - xft_font->ascent,
+					glyph_info.xOff, xft_font->height);
+				}
+
+			// Draw the run text.
 			XftDrawStringUtf8(
-				xft_draw, &xft_color, xft_font,
+				xft_draw, colors.xft_color(run->style.foreground_color), xft_font,
 				x, y,
-				(const FcChar8*) run->bytes(), strlen(run->bytes()));
+				(const FcChar8*) run->bytes(), num_bytes);
+			x += glyph_info.xOff; 	// Not "width".  It'd be nice if Xft were documented...
 			}
 		y += xft_font->height;
 		}
-
-	XftColorFree(display, visual, colormap, &xft_color);
 
 	// Copy to the screen.
 	XCopyArea(

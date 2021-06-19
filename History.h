@@ -6,6 +6,9 @@
 
 class Line;
 
+// The History is the heart of the terminal.  It's the list of all the lines,
+// and it gets the characters and interprets them to build those lines.
+
 
 class History {
 	public:

@@ -1,5 +1,6 @@
 #include "History.h"
 #include "Line.h"
+#include "Colors.h"
 #include "UTF8.h"
 
 
@@ -327,6 +328,43 @@ const char* History::parse_csi(const char* p, const char* end)
 			// Delete Character (DCH).
 			line(current_line)->delete_characters(current_column, args[0] ? args[0] : 1);
 			update_at_end_of_line();
+			break;
+
+		case 'm':
+			// Select Graphic Rendition (SGR).
+			switch (args[0]) {
+				case 0:
+					current_style.reset();
+					break;
+				case 30: case 31: case 32: case 33:
+				case 34: case 35: case 36: case 37:
+					// Set forground color.
+					current_style.foreground_color = args[0] - 30;
+					break;
+				case 38:
+					// Set foreground color.
+					if (args[1] == 5)
+						current_style.foreground_color = args[2];
+					else if (args[1] == 2) {
+						current_style.foreground_color =
+							Colors::true_color_bit | args[2] << 16 | args[3] << 8 | args[4];
+						}
+					break;
+				case 40: case 41: case 42: case 43:
+				case 44: case 45: case 46: case 47:
+					// Set background color.
+					current_style.background_color = args[0] - 40;
+					break;
+				case 48:
+					// Set background color.
+					if (args[1] == 5)
+						current_style.background_color = args[2];
+					else if (args[1] == 2) {
+						current_style.background_color =
+							Colors::true_color_bit | args[2] << 16 | args[3] << 8 | args[4];
+						}
+					break;
+				}
 			break;
 
 		default:
