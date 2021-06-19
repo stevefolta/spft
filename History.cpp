@@ -132,8 +132,8 @@ int History::add_input(const char* input, int length)
 
 			case '\b':
 				if (current_column > 0) {
-					line(current_line)->delete_characters(current_column - 1, 1);
 					current_column -= 1;
+					at_end_of_line = false;
 					}
 				break;
 
