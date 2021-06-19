@@ -5,6 +5,7 @@
 #include "Run.h"
 #include "Colors.h"
 #include "Settings.h"
+#include "UTF8.h"
 #include <X11/cursorfont.h>
 #include <stdexcept>
 #include <string.h>
@@ -183,9 +184,13 @@ void TermWindow::draw()
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
 	int y = xft_font->ascent;
+	int64_t current_line = history->get_current_line();
 	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
+		// Draw the runs in the line.
 		int x = 0;
+		int chars_drawn = 0; 	// Only updated for the line with the cursor on it.
 		Line* line = history->line(which_line);
+		int current_column = history->get_current_column();
 		for (auto run: *line) {
 			int num_bytes = strlen(run->bytes());
 			XGlyphInfo glyph_info;
@@ -206,8 +211,59 @@ void TermWindow::draw()
 				xft_draw, colors.xft_color(run->style.foreground_color), xft_font,
 				x, y,
 				(const FcChar8*) run->bytes(), num_bytes);
+
+			// Draw the cursor if it's in the run.
+			if (which_line == current_line) {
+				int run_chars = run->num_characters();
+				if (current_column >= chars_drawn && current_column < chars_drawn + run_chars) {
+					int bytes_before_cursor =
+						UTF8::bytes_for_n_characters(
+							run->bytes(), num_bytes, current_column - chars_drawn);
+					XGlyphInfo glyph_info; 	// Don't touch the outer one.
+					XftTextExtentsUtf8(
+						display, xft_font,
+						(const FcChar8*) run->bytes(), bytes_before_cursor,
+						&glyph_info);
+					int cursor_x = x + glyph_info.xOff;
+					const char* char_bytes = run->bytes() + bytes_before_cursor;
+					int char_num_bytes =
+						UTF8::bytes_for_n_characters(char_bytes, num_bytes - bytes_before_cursor, 1);
+					XftTextExtentsUtf8(
+						display, xft_font,
+						(const FcChar8*) char_bytes, char_num_bytes,
+						&glyph_info);
+					int cursor_width = glyph_info.xOff;
+					// Background.
+					XftDrawRect(
+						xft_draw, colors.xft_color(run->style.foreground_color), 
+						cursor_x, y - xft_font->ascent,
+						cursor_width, xft_font->height);
+					// Character.
+					XftDrawStringUtf8(
+						xft_draw, colors.xft_color(run->style.background_color), xft_font,
+						cursor_x, y,
+						(const FcChar8*) char_bytes, char_num_bytes);
+					}
+				chars_drawn += run_chars;
+				}
+
 			x += glyph_info.xOff; 	// Not "width".  It'd be nice if Xft were documented...
 			}
+
+		// Draw the cursor if it's at the end of the line.
+		if (which_line == current_line && current_column >= chars_drawn) {
+			// "x" is already at the end of the line.
+			XGlyphInfo glyph_info;
+			XftTextExtentsUtf8(
+				display, xft_font,
+				(const FcChar8*) " ", 1,
+				&glyph_info);
+			XftDrawRect(
+				xft_draw, colors.xft_color(settings.default_foreground_color), 
+				x, y - xft_font->ascent,
+				glyph_info.xOff, xft_font->height);
+			}
+
 		y += xft_font->height;
 		}
 
