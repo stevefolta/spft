@@ -4,7 +4,6 @@
 // This would just be called "Window", but that conflicts with XWindow's type
 // of the same name.
 
-#include "Colors.h"
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <stdint.h>
