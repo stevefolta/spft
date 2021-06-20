@@ -172,6 +172,9 @@ void Line::clear_from_beginning_to(int column)
 
 void Line::prepend_spaces(int num_spaces, Style style)
 {
+	if (num_spaces <= 0)
+		return;
+
 	char* spaces = (char*) malloc(num_spaces + 1);
 	for (int i = 0; i < num_spaces; ++i)
 		spaces[i] = ' ';

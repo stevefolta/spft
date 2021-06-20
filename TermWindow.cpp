@@ -12,12 +12,14 @@
 
 
 TermWindow::TermWindow()
+	: pixmap(0)
 {
 	top_line = -1;
 	closed = false;
 
 	history = new History();
 	terminal = new Terminal(history);
+	history->set_terminal(terminal);
 
 	display = XOpenDisplay(nullptr);
 	if (display == nullptr)
@@ -276,6 +278,9 @@ void TermWindow::draw()
 
 void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 {
+	if (pixmap && new_width == width && new_height == height)
+		return;
+
 	// Set up drawing (new pixmap etc.).
 	width = new_width;
 	height = new_height;
@@ -295,6 +300,8 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 		width / (glyph_info.xOff * settings.estimated_column_width),
 		height / xft_font->height,
 		width, height);
+
+	history->set_lines_on_screen(height / xft_font->height);
 }
 
 
