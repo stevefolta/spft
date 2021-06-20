@@ -392,6 +392,9 @@ const char* History::parse_dcs(const char* p, const char* end)
 		return nullptr;
 
 	//*** TODO
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+	printf("- Unimplemented DCS: %.*s\n", (int) (sequence_end - p), p);
+#endif
 	return sequence_end;
 }
 
@@ -403,6 +406,9 @@ const char* History::parse_osc(const char* p, const char* end)
 		return nullptr;
 
 	//*** TODO
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+	printf("- Unimplemented OSC: %.*s\n", (int) (sequence_end - p), p);
+#endif
 	return sequence_end;
 }
 
