@@ -16,6 +16,7 @@ class Terminal {
 		void	tick();
 		void	send(const char* data, int length = -1);
 		void	hang_up();
+		void	notify_resize(int columns, int rows, int pixel_width, int pixel_height);
 
 	private:
 		History* history;

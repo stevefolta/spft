@@ -123,6 +123,17 @@ void Terminal::hang_up()
 }
 
 
+void Terminal::notify_resize(int columns, int rows, int pixel_width, int pixel_height)
+{
+	struct winsize window_size;
+	window_size.ws_row = rows;
+	window_size.ws_col = columns;
+	window_size.ws_xpixel = pixel_width;
+	window_size.ws_ypixel = pixel_height;
+	ioctl(terminal_fd, TIOCSWINSZ, &window_size);
+}
+
+
 void Terminal::exec_shell()
 {
 	const struct passwd* user_info = getpwuid(getuid());

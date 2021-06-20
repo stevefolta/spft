@@ -5,5 +5,6 @@ Settings settings = {
 	"xterm",
 	0,
 	15,
+	0.75,
 	};
 

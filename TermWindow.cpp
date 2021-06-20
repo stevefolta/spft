@@ -276,6 +276,7 @@ void TermWindow::draw()
 
 void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 {
+	// Set up drawing (new pixmap etc.).
 	width = new_width;
 	height = new_height;
 	XFreePixmap(display, pixmap);
@@ -283,6 +284,17 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 	XftDrawChange(xft_draw, pixmap);
 	XSetForeground(display, gc, attributes.background_pixel);
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
+
+	// Notify the terminal.
+	XGlyphInfo glyph_info;
+	XftTextExtentsUtf8(
+		display, xft_font,
+		(const FcChar8*) "M", 1,
+		&glyph_info);
+	terminal->notify_resize(
+		width / (glyph_info.xOff * settings.estimated_column_width),
+		height / xft_font->height,
+		width, height);
 }
 
 

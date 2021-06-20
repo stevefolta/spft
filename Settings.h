@@ -9,6 +9,9 @@ struct Settings {
 	std::string	term_name;
 	uint32_t	default_foreground_color;
 	uint32_t	default_background_color;
+	float	estimated_column_width;
+		// A guess at the average character width, as a fraction of the width of
+		// a capital "M".
 	};
 extern Settings settings;
 
