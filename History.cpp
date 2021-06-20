@@ -2,6 +2,9 @@
 #include "Line.h"
 #include "Colors.h"
 #include "UTF8.h"
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+	#include <stdio.h>
+#endif
 
 
 History::History()
@@ -215,6 +218,9 @@ const char* History::parse_csi(const char* p, const char* end)
 	// after the escape sequence.
 
 	char c;
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+	const char* escape_start = p;
+#endif
 
 	// Arguments.
 	static const int max_args = 20;
@@ -369,6 +375,9 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		default:
 			// This is either unimplemented or invalid.
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+			printf("- Unimplemented CSI: %.*s\n", (int) (p - escape_start), escape_start);
+#endif
 			break;
 		}
 
