@@ -357,6 +357,7 @@ const char* History::parse_csi(const char* p, const char* end)
 			current_column = args[1] ? args[1] - 1 : 0;
 			ensure_current_line();
 			ensure_current_column();
+			update_at_end_of_line();
 			break;
 
 		case 'J':

@@ -4,4 +4,10 @@ print('foo\x1B[Cbar')
 print('foo xar\x1B[D\x1B[D\x1B[Db')
 print('\x1B[43mfoo \x1B[48;2;192;192;192mbar\x1B[0m')
 
+# Tests of Line::replace_characters().
+# Splitting a run.
+print('foo xar\b\b\b\x1B[43mb\x1B[0m')
+# Grow a run.
+print('foo x\bbar')
+
 

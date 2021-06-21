@@ -72,8 +72,7 @@ void Line::replace_characters(int column, const char* bytes, int length, Style s
 					runs.insert(where, new_run);
 					// Trim the existing run.
 					(*run)->shorten_to(columns_left);
-					already_deleted_chars = old_run_chars - columns_left;
-					assert(already_deleted_chars == num_chars);
+					already_deleted_chars = num_chars;
 					// New characters go before the next run (the one we just split
 					// off).
 					insert_before = run;
