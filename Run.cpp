@@ -111,7 +111,7 @@ void Run::delete_first_characters(int num_chars)
 	int index =
 		UTF8::bytes_for_n_characters(characters, old_num_bytes, num_chars);
 	memmove(characters, characters + index, old_num_bytes - index + 1); 	// Include terminating zero byte.
-	characters = (char*) realloc(characters, index + 1);
+	characters = (char*) realloc(characters, old_num_bytes - index + 1);
 }
 
 

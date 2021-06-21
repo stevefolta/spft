@@ -9,5 +9,6 @@ print('\x1B[43mfoo \x1B[48;2;192;192;192mbar\x1B[0m')
 print('foo xar\b\b\b\x1B[43mb\x1B[0m')
 # Grow a run.
 print('foo x\bbar')
-
+# Before a run.
+print("foo \x1B[48;2;192;192;192mbar\b\b\b\x1B[0m\x1B[43mb\x1B[0m")
 
