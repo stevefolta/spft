@@ -25,7 +25,7 @@ CFLAGS += -MMD
 CFLAGS += -g
 CFLAGS += $(foreach switch,$(SWITCHES),-D$(switch))
 
-CFLAGS += -std=c++11 -I$(X11_INCLUDES)
+CFLAGS += -std=c++11 -I$(X11_INCLUDES) `pkg-config --cflags fontconfig`
 LINK_FLAGS += -L$(X11_LIBS) -lX11 -lXft -lutil
 
 $(OBJECTS_DIR)/%.o: %.cpp
