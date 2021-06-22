@@ -343,8 +343,8 @@ void TermWindow::key_down(XKeyEvent* event)
 					top_line = -1;
 					}
 				draw();
-				return;
 				}
+			return;
 			}
 		}
 
