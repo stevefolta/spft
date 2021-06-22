@@ -135,12 +135,22 @@ int History::add_input(const char* input, int length)
 				break;
 
 			case '\n':
-				if (current_line >= last_line)
+				{
+				bool needs_scroll =
+					(top_margin > 0 && current_line >= last_line) ||
+					(bottom_margin >= 0 &&
+					 current_line == calc_screen_top_line() + bottom_margin);
+				if (needs_scroll) {
+					int64_t screen_top = calc_screen_top_line();
+					scroll_up(screen_top + top_margin, screen_top + bottom_margin, 1);
+					}
+				else if (current_line >= last_line)
 					new_line();
 				else {
 					current_line += 1;
 					update_at_end_of_line();
 					}
+				}
 				break;
 
 			case '\b':
@@ -590,13 +600,33 @@ void History::insert_lines(int num_lines)
 	// Move and erase the lines.
 	for (int dest_line = bottom_scroll_line; dest_line >= current_line; --dest_line) {
 		int dest_index = line_index(dest_line);
-		int src_line = dest_line - num_lines;
+		int64_t src_line = dest_line - num_lines;
 		if (src_line < current_line) {
 			if (lines[dest_index])
 				lines[dest_index]->clear();
 			}
 		else {
-			int src_index = line_index(dest_line - num_lines);
+			int src_index = line_index(src_line);
+			delete lines[dest_index];
+			lines[dest_index] = lines[src_index];
+			lines[src_index] = new Line();
+			}
+		}
+}
+
+
+void History::scroll_up(int64_t top_scroll_line, int64_t bottom_scroll_line, int num_lines)
+{
+	// Move and erase the lines.
+	for (int dest_line = top_scroll_line; dest_line <= bottom_scroll_line; ++dest_line) {
+		int dest_index = line_index(dest_line);
+		int64_t src_line = dest_line + num_lines;
+		if (src_line > bottom_scroll_line) {
+			if (lines[dest_index])
+				lines[dest_index]->clear();
+			}
+		else {
+			int src_index = line_index(src_line);
 			delete lines[dest_index];
 			lines[dest_index] = lines[src_index];
 			lines[src_index] = new Line();
