@@ -22,6 +22,7 @@ History::History()
 	lines[0] = new Line();
 	top_margin = 0;
 	bottom_margin = -1;
+	alternate_screen_top_line = -1;
 }
 
 
@@ -224,6 +225,8 @@ void History::allocate_new_line()
 		// We may not have allocated the Line yet.
 		if (lines[last_line] == nullptr)
 			lines[last_line] = new Line();
+		else
+			lines[last_line]->clear();
 		}
 }
 
@@ -299,6 +302,9 @@ const char* History::parse_csi(const char* p, const char* end)
 		else
 			break;
 		}
+	// There's always one more arg than there are semicolons.  This implies
+	// there's always at least one arg.
+	num_args += 1;
 
 	// "Intermediate bytes".
 	// We ignore these.
@@ -483,6 +489,28 @@ const char* History::parse_csi(const char* p, const char* end)
 	// Private codes.
 	else {
 		switch (c) {
+			case 'h':
+				// Set Mode (SM).
+				for (int i = 0; i < num_args; ++i) {
+					bool handled = set_private_mode(args[i], true);
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					if (!handled)
+						printf("- Unimplemented set mode: ?%d\n", args[i]);
+#endif
+					}
+				break;
+
+			case 'l':
+				// Reset Mode (RM).
+				for (int i = 0; i < num_args; ++i) {
+					bool handled = set_private_mode(args[i], false);
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					if (!handled)
+						printf("- Unimplemented reset mode: ?%d\n", args[i]);
+#endif
+					}
+				break;
+
 			default:
 				// This is either unimplemented or invalid.
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
@@ -542,6 +570,25 @@ const char* History::parse_st_string(const char* p, const char* end, bool can_en
 
 	// Incomplete string.
 	return nullptr;
+}
+
+
+bool History::set_private_mode(int mode, bool set)
+{
+	switch (mode) {
+		case 1049:
+			// Alternate screen.
+			if (set)
+				enter_alternate_screen();
+			else
+				exit_alternate_screen();
+			break;
+
+		default:
+			return false;
+		}
+
+	return true;
 }
 
 
@@ -632,6 +679,52 @@ void History::scroll_up(int64_t top_scroll_line, int64_t bottom_scroll_line, int
 			lines[src_index] = new Line();
 			}
 		}
+}
+
+
+void History::enter_alternate_screen()
+{
+	if (alternate_screen_top_line >= 0)
+		return;
+
+	// mlterm replaces the bottom lines with the alternate screen, but we add
+	// new lines instead.  This allows you to see the entire main screen when
+	// scrolling back.  We don't save the alternate screen after exiting it.
+
+	// Save state.
+	main_screen_current_line = current_line;
+	main_screen_current_column = current_column;
+	main_screen_top_margin = top_margin;
+	main_screen_bottom_margin = bottom_margin;
+
+	// Create the new lines.
+	alternate_screen_top_line = last_line + 1;
+	current_column = 0;
+	for (int i = 0; i < lines_on_screen; ++i)
+		allocate_new_line();
+
+	// Reset state.
+	current_line = alternate_screen_top_line;
+	current_column = 0;
+	top_margin = 0;
+	bottom_margin = -1;
+}
+
+
+void History::exit_alternate_screen()
+{
+	if (alternate_screen_top_line < 0)
+		return;
+
+	// Delete the last screen's lines.
+	last_line = alternate_screen_top_line - 1;
+
+	// Restore state.
+	current_line = main_screen_current_line;
+	current_column = main_screen_current_column;
+	top_margin = main_screen_top_margin;
+	bottom_margin = main_screen_bottom_margin;
+	alternate_screen_top_line = -1;
 }
 
 

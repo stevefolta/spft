@@ -47,6 +47,12 @@ class History {
 		Line**	lines;
 		Terminal*	terminal;
 		int	top_margin, bottom_margin; 	// -1 bottom_margin means "bottom of screen"
+		int64_t	alternate_screen_top_line; 	// -1: not in alternate screen.
+
+		// Saved during alternate screen.
+		int64_t	main_screen_current_line;
+		int	main_screen_current_column;
+		int	main_screen_top_margin, main_screen_bottom_margin;
 
 		int	line_index(int64_t which_line) {
 			return (first_line_index + (which_line - first_line)) % capacity;
@@ -63,6 +69,7 @@ class History {
 		const char*	parse_dcs(const char* p, const char* end);
 		const char*	parse_osc(const char* p, const char* end);
 		const char*	parse_st_string(const char* p, const char* end, bool can_end_with_bel = false);
+		bool	set_private_mode(int mode, bool set); 	// false => unimplemented
 
 		int64_t	calc_screen_top_line();
 		int64_t	calc_screen_bottom_line();
@@ -72,6 +79,9 @@ class History {
 		void	clear_screen();
 		void	insert_lines(int num_lines);
 		void	scroll_up(int64_t top_scroll_line, int64_t bottom_scroll_line, int num_lines);
+
+		void	enter_alternate_screen();
+		void	exit_alternate_screen();
 	};
 
 
