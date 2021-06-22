@@ -358,6 +358,10 @@ void TermWindow::key_down(XKeyEvent* event)
 		{ XK_Down, "\x1B[B" },
 		{ XK_Left, "\x1B[D" },
 		{ XK_Right, "\x1B[C" },
+		{ XK_Home, "\x1B[1~" },
+		{ XK_End, "\x1B[4~" },
+		{ XK_Prior, "\x1B[5~" },
+		{ XK_Next, "\x1B[6~" },
 		};
 	const KeyMapping* mappingsEnd = &keyMappings[sizeof(keyMappings) / sizeof(keyMappings[0])];
 	for (KeyMapping* mapping = keyMappings; mapping < mappingsEnd; ++mapping) {
