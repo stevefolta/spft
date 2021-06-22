@@ -360,8 +360,22 @@ void TermWindow::key_down(XKeyEvent* event)
 		{ XK_Right, "\x1B[C" },
 		{ XK_Home, "\x1B[1~" },
 		{ XK_End, "\x1B[4~" },
-		{ XK_Prior, "\x1B[5~" },
-		{ XK_Next, "\x1B[6~" },
+		{ XK_Prior, "\x1B[5~" }, 	// Page up.
+		{ XK_Next, "\x1B[6~" }, 	// Page down.
+		{ XK_Insert, "\x1B[2~" },
+		{ XK_Delete, "\x1B[3~" },
+		{ XK_F1, "\x1BOP" },
+		{ XK_F2, "\x1BOQ" },
+		{ XK_F3, "\x1BOR" },
+		{ XK_F4, "\x1BOS" },
+		{ XK_F5, "\x1B[15~" },
+		{ XK_F6, "\x1B[17~" },
+		{ XK_F7, "\x1B[18~" },
+		{ XK_F8, "\x1B[19~" },
+		{ XK_F9, "\x1B[20~" },
+		{ XK_F10, "\x1B[21~" },
+		{ XK_F11, "\x1B[23~" },
+		{ XK_F12, "\x1B[24~" },
 		};
 	const KeyMapping* mappingsEnd = &keyMappings[sizeof(keyMappings) / sizeof(keyMappings[0])];
 	for (KeyMapping* mapping = keyMappings; mapping < mappingsEnd; ++mapping) {
