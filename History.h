@@ -22,7 +22,9 @@ class History {
 			}
 
 		int64_t	num_lines();
-		Line*	line(int64_t which_line);
+		Line*	line(int64_t which_line) {
+			return lines[line_index(which_line)];
+			}
 
 		int	add_input(const char* input, int length);
 			// Returns number of bytes consumed.
@@ -44,6 +46,11 @@ class History {
 		int	current_column;
 		Line**	lines;
 		Terminal*	terminal;
+		int	top_margin, bottom_margin; 	// -1 bottom_margin means "bottom of screen"
+
+		int	line_index(int64_t which_line) {
+			return (first_line_index + (which_line - first_line)) % capacity;
+			}
 
 		void	add_to_current_line(const char* start, const char* end);
 		void	new_line();
@@ -63,6 +70,7 @@ class History {
 		void	clear_to_end_of_screen();
 		void	clear_to_beginning_of_screen();
 		void	clear_screen();
+		void	insert_lines(int num_lines);
 	};
 
 

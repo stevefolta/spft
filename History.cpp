@@ -20,6 +20,8 @@ History::History()
 	for (int64_t i = 0; i < capacity; ++i)
 		lines[i] = nullptr;
 	lines[0] = new Line();
+	top_margin = 0;
+	bottom_margin = -1;
 }
 
 
@@ -34,12 +36,6 @@ History::~History()
 int64_t History::num_lines()
 {
 	return last_line;
-}
-
-
-Line* History::line(int64_t which_line)
-{
-	return lines[(first_line_index + (which_line - first_line)) % capacity];
 }
 
 
@@ -392,6 +388,11 @@ const char* History::parse_csi(const char* p, const char* end)
 			}
 			break;
 
+		case 'L':
+			// Insert blank lines (IL).
+			insert_lines(args[0] ? args[0] : 1);
+			break;
+
 		case 'P':
 			// Delete Character (DCH).
 			line(current_line)->delete_characters(current_column, args[0] ? args[0] : 1);
@@ -447,6 +448,17 @@ const char* History::parse_csi(const char* p, const char* end)
 				}
 			else
 				goto unimplemented;
+			break;
+
+		case 'r':
+			// Set scroll margins (DECSTBM).
+			top_margin = args[0] ? args[0] - 1 : 0;
+			bottom_margin = args[1] ? args[1] - 1 : -1;
+			if (top_margin >= bottom_margin) {
+				// Invalid; reset them.
+				top_margin = 0;
+				bottom_margin = -1;
+				}
 			break;
 
 		default:
@@ -563,6 +575,33 @@ void History::clear_screen()
 {
 	for (int64_t which_line = calc_screen_top_line(); which_line <= last_line; ++which_line)
 		line(which_line)->clear();
+}
+
+
+void History::insert_lines(int num_lines)
+{
+	int64_t screen_top_line = calc_screen_top_line();
+	int64_t bottom_scroll_line =
+		bottom_margin < 0 ? calc_screen_bottom_line() : screen_top_line + bottom_margin;
+	int max_scroll = bottom_scroll_line - current_line + 1;
+	if (num_lines > max_scroll)
+		num_lines = max_scroll;
+
+	// Move and erase the lines.
+	for (int dest_line = bottom_scroll_line; dest_line >= current_line; --dest_line) {
+		int dest_index = line_index(dest_line);
+		int src_line = dest_line - num_lines;
+		if (src_line < current_line) {
+			if (lines[dest_index])
+				lines[dest_index]->clear();
+			}
+		else {
+			int src_index = line_index(dest_line - num_lines);
+			delete lines[dest_index];
+			lines[dest_index] = lines[src_index];
+			lines[src_index] = new Line();
+			}
+		}
 }
 
 
