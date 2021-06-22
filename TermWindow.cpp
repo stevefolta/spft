@@ -351,35 +351,42 @@ void TermWindow::key_down(XKeyEvent* event)
 	// Special keys that XLookupString() doesn't handle.
 	struct KeyMapping {
 		KeySym	keySym;
+		unsigned int	mask;
 		const char*	str;
 		};
+	enum {
+		AnyModKey = UINT_MAX,
+		};
 	KeyMapping keyMappings[] = {
-		{ XK_Up, "\x1B[A" },
-		{ XK_Down, "\x1B[B" },
-		{ XK_Left, "\x1B[D" },
-		{ XK_Right, "\x1B[C" },
-		{ XK_Home, "\x1B[1~" },
-		{ XK_End, "\x1B[4~" },
-		{ XK_Prior, "\x1B[5~" }, 	// Page up.
-		{ XK_Next, "\x1B[6~" }, 	// Page down.
-		{ XK_Insert, "\x1B[2~" },
-		{ XK_Delete, "\x1B[3~" },
-		{ XK_F1, "\x1BOP" },
-		{ XK_F2, "\x1BOQ" },
-		{ XK_F3, "\x1BOR" },
-		{ XK_F4, "\x1BOS" },
-		{ XK_F5, "\x1B[15~" },
-		{ XK_F6, "\x1B[17~" },
-		{ XK_F7, "\x1B[18~" },
-		{ XK_F8, "\x1B[19~" },
-		{ XK_F9, "\x1B[20~" },
-		{ XK_F10, "\x1B[21~" },
-		{ XK_F11, "\x1B[23~" },
-		{ XK_F12, "\x1B[24~" },
+		{ XK_Up, AnyModKey, "\x1B[A" },
+		{ XK_Down, AnyModKey, "\x1B[B" },
+		{ XK_Left, AnyModKey, "\x1B[D" },
+		{ XK_Right, AnyModKey, "\x1B[C" },
+		{ XK_Home, AnyModKey, "\x1B[1~" },
+		{ XK_End, AnyModKey, "\x1B[4~" },
+		{ XK_Prior, 0, "\x1B[5~" }, 	// Page up.
+		{ XK_Next, 0, "\x1B[6~" }, 	// Page down.
+		{ XK_Insert, AnyModKey, "\x1B[2~" },
+		{ XK_Delete, AnyModKey, "\x1B[3~" },
+		{ XK_F1, AnyModKey, "\x1BOP" },
+		{ XK_F2, AnyModKey, "\x1BOQ" },
+		{ XK_F3, AnyModKey, "\x1BOR" },
+		{ XK_F4, AnyModKey, "\x1BOS" },
+		{ XK_F5, AnyModKey, "\x1B[15~" },
+		{ XK_F6, AnyModKey, "\x1B[17~" },
+		{ XK_F7, AnyModKey, "\x1B[18~" },
+		{ XK_F8, AnyModKey, "\x1B[19~" },
+		{ XK_F9, AnyModKey, "\x1B[20~" },
+		{ XK_F10, AnyModKey, "\x1B[21~" },
+		{ XK_F11, AnyModKey, "\x1B[23~" },
+		{ XK_F12, AnyModKey, "\x1B[24~" },
 		};
 	const KeyMapping* mappingsEnd = &keyMappings[sizeof(keyMappings) / sizeof(keyMappings[0])];
 	for (KeyMapping* mapping = keyMappings; mapping < mappingsEnd; ++mapping) {
-		if (keySym == mapping->keySym) {
+		bool matches =
+			keySym == mapping->keySym &&
+			(mapping->mask == AnyModKey || mapping->mask == (event->state & ~Mod2Mask));
+		if (matches) {
 			terminal->send(mapping->str);
 			scroll_to_bottom();
 			}
