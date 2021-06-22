@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import time
+
 print('foo\x1B[Cbar')
 print('foo xar\x1B[D\x1B[D\x1B[Db')
 print('\x1B[43mfoo \x1B[48;2;192;192;192mbar\x1B[0m')
@@ -11,4 +13,15 @@ print('foo xar\b\b\b\x1B[43mb\x1B[0m')
 print('foo x\bbar')
 # Before a run.
 print("foo \x1B[48;2;192;192;192mbar\b\b\b\x1B[0m\x1B[43mb\x1B[0m")
+# !!! NEED MORE !!!
+
+
+# Cursor disable/enable.
+print("foo bar\b\b\b\x1B[?25l", end = '', flush = True)
+time.sleep(1)
+print("\x1B[?25h", end = '', flush = True)
+time.sleep(1)
+print()
+
+
 

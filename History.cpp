@@ -9,7 +9,7 @@
 
 
 History::History()
-	: terminal(nullptr)
+	: cursor_enabled(true), terminal(nullptr)
 {
 	at_end_of_line = true;
 	capacity = 10000;
@@ -576,6 +576,10 @@ const char* History::parse_st_string(const char* p, const char* end, bool can_en
 bool History::set_private_mode(int mode, bool set)
 {
 	switch (mode) {
+		case 25:
+			cursor_enabled = set;
+			break;
+
 		case 1049:
 			// Alternate screen.
 			if (set)

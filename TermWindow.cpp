@@ -215,7 +215,7 @@ void TermWindow::draw()
 				(const FcChar8*) run->bytes(), num_bytes);
 
 			// Draw the cursor if it's in the run.
-			if (which_line == current_line) {
+			if (which_line == current_line && history->cursor_enabled) {
 				int run_chars = run->num_characters();
 				if (current_column >= chars_drawn && current_column < chars_drawn + run_chars) {
 					int bytes_before_cursor =
@@ -253,7 +253,10 @@ void TermWindow::draw()
 			}
 
 		// Draw the cursor if it's at the end of the line.
-		if (which_line == current_line && current_column >= chars_drawn) {
+		bool draw_eol_cursor =
+			which_line == current_line && current_column >= chars_drawn &&
+			history->cursor_enabled;
+		if (draw_eol_cursor) {
 			// "x" is already at the end of the line.
 			XGlyphInfo glyph_info;
 			XftTextExtentsUtf8(

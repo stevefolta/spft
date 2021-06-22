@@ -33,6 +33,7 @@ class History {
 		int64_t	get_last_line() { return last_line; }
 		int64_t	get_current_line() { return current_line; }
 		int	get_current_column() { return current_column; }
+		bool	cursor_enabled;
 
 	private:
 		Style	current_style;
