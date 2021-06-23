@@ -13,6 +13,10 @@ print('foo xar\b\b\b\x1B[43mb\x1B[0m')
 print('foo x\bbar')
 # Before a run.
 print("foo \x1B[48;2;192;192;192mbar\b\b\b\x1B[0m\x1B[43mb\x1B[0m")
+# Within a run.
+print("xxx xar\b\b\b\b\b\b\bfoo b")
+# Unsplitting a run.
+print("\x1B[43mxxx x\x1B[0mar\b\b\b\b\b\b\bfoo b")
 # !!! NEED MORE !!!
 
 

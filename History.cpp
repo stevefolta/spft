@@ -144,6 +144,7 @@ int History::add_input(const char* input, int length)
 				if (needs_scroll) {
 					int64_t screen_top = calc_screen_top_line();
 					scroll_up(screen_top + top_margin, screen_top + bottom_margin, 1);
+					update_at_end_of_line();
 					}
 				else if (current_line >= last_line)
 					new_line();
@@ -176,7 +177,6 @@ int History::add_input(const char* input, int length)
 					}
 				// Add to current line.
 				add_to_current_line(run_start, p);
-				current_column += UTF8::num_characters(run_start, p - run_start);
 				break;
 
 			unfinished_run:
@@ -197,8 +197,10 @@ void History::add_to_current_line(const char* start, const char* end)
 	else {
 		cur_line->replace_characters(
 			current_column, start, end - start, current_style);
-		update_at_end_of_line();
 		}
+	current_column += UTF8::num_characters(start, end - start);
+	if (!at_end_of_line)
+		update_at_end_of_line();
 }
 
 
@@ -663,6 +665,8 @@ void History::insert_lines(int num_lines)
 			lines[src_index] = new Line();
 			}
 		}
+
+	update_at_end_of_line();
 }
 
 
@@ -712,6 +716,7 @@ void History::enter_alternate_screen()
 	current_column = 0;
 	top_margin = 0;
 	bottom_margin = -1;
+	update_at_end_of_line();
 }
 
 
@@ -729,6 +734,7 @@ void History::exit_alternate_screen()
 	top_margin = main_screen_top_margin;
 	bottom_margin = main_screen_bottom_margin;
 	alternate_screen_top_line = -1;
+	update_at_end_of_line();
 }
 
 
