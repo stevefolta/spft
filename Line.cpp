@@ -233,7 +233,7 @@ void Line::delete_characters(int column, int num_chars)
 			}
 		column -= run_num_chars;
 		}
-	runs.erase(first_to_delete, runs.end());
+	runs.erase(first_to_delete, deleted_runs_end);
 }
 
 
