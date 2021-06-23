@@ -224,6 +224,7 @@ void Line::delete_characters(int column, int num_chars)
 				// Deletion starts at the end of this run.
 				(*run)->shorten_to(column);
 				num_chars -= run_num_chars - column;
+				column = 0;
 				}
 			else {
 				// Deletion is entirely within this run.
@@ -231,7 +232,8 @@ void Line::delete_characters(int column, int num_chars)
 				break;
 				}
 			}
-		column -= run_num_chars;
+		else
+			column -= run_num_chars;
 		}
 	runs.erase(first_to_delete, deleted_runs_end);
 }
