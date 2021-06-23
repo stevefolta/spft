@@ -57,7 +57,7 @@ void Run::replace_characters(int column, const char* new_chars, int num_bytes)
 			UTF8::bytes_for_n_characters(
 				characters + start_index, old_length - start_index, num_chars);
 		}
-	char* new_bytes = (char*) malloc(old_length + num_bytes + 1);
+	char* new_bytes = (char*) malloc(old_length + num_bytes - replaced_bytes + 1);
 
 	// Build the new string.
 	// Initial old characters.
