@@ -1,7 +1,7 @@
 #include "Settings.h"
 
 Settings settings = {
-	"Helvetica Neue:style=Light:size=18",
+	"Helvetica Neue-18:style=Light",
 	"xterm",
 	0,
 	15,
