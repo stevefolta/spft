@@ -2,32 +2,39 @@
 
 import time
 
-print('foo\x1B[Cbar')
-print('foo xar\x1B[D\x1B[D\x1B[Db')
-print('\x1B[43mfoo \x1B[48;2;192;192;192mbar\x1B[0m')
+csi = "\x1B["
+reset = f"{csi}0m"
+greenback = f"{csi}43m"
+greyback = f"{csi}48;2;192;192;192m"
+
+print(f'foo{csi}Cbar')
+print(f'foo xar{csi}D{csi}D{csi}Db')
+print(f'{greenback}foo {greyback}bar{reset}')
 
 # Tests of Line::replace_characters().
 # Splitting a run.
-print('foo xar\b\b\b\x1B[43mb\x1B[0m')
+print(f'foo xar\b\b\b{greenback}b{reset}')
 # Grow a run.
-print('foo x\bbar')
+print(f'foo x\bbar')
 # Before a run.
-print("foo \x1B[48;2;192;192;192mbar\b\b\b\x1B[0m\x1B[43mb\x1B[0m")
+print(f"foo {greyback}bar\b\b\b{reset}{greenback}b{reset}")
 # Within a run.
-print("xxx xar\b\b\b\b\b\b\bfoo b")
+print(f"xxx xar\b\b\b\b\b\b\bfoo b")
 # Unsplitting a run.
-print("\x1B[43mxxx x\x1B[0mar\b\b\b\b\b\b\bfoo b")
+print(f"{greenback}xxx x{reset}ar\b\b\b\b\b\b\bfoo b")
 # Replacing multiple runs.
-print("\x1B[31mx\x1B[32mx\x1B[33mx \x1B[34mx\x1B[0mar\b\b\b\b\b\b\bfoo b")
+print(f"{csi}31mx{csi}32mx{csi}33mx {csi}34mx{reset}ar\b\b\b\b\b\b\bfoo b")
 # !!! NEED MORE! AND DELETION! !!!
 
 
 # Cursor disable/enable.
-print("foo bar\b\b\b\x1B[?25l", end = '', flush = True)
-time.sleep(1)
-print("\x1B[?25h", end = '', flush = True)
-time.sleep(1)
-print()
+def cursor_disable_test():
+	print(f"foo bar\b\b\b{csi}?25l", end = '', flush = True)
+	time.sleep(1)
+	print(f"{csi}?25h", end = '', flush = True)
+	time.sleep(1)
+	print()
+# cursor_disable_test()
 
 
 
