@@ -293,6 +293,16 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 	XSetForeground(display, gc, attributes.background_pixel);
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
 
+	screen_size_changed();
+}
+
+
+void TermWindow::screen_size_changed()
+{
+	int lines_on_screen = height / xft_font->height;
+
+	history->set_lines_on_screen(lines_on_screen);
+
 	// Notify the terminal.
 	XGlyphInfo glyph_info;
 	XftTextExtentsUtf8(
@@ -301,10 +311,8 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 		&glyph_info);
 	terminal->notify_resize(
 		width / (glyph_info.xOff * settings.estimated_column_width),
-		height / xft_font->height,
+		lines_on_screen,
 		width, height);
-
-	history->set_lines_on_screen(height / xft_font->height);
 }
 
 
@@ -314,7 +322,7 @@ void TermWindow::key_down(XKeyEvent* event)
 	KeySym keySym = 0;
 	int length = XLookupString(event, buffer, sizeof(buffer), &keySym, NULL);
 
-	// Shift-PgUp/PgDown.
+	// Shift-PgUp/PgDown/Break.
 	if ((event->state & ShiftMask) != 0) {
 		int64_t num_lines = displayed_lines();
 		int64_t half_page = num_lines / 2 + 1;
@@ -348,6 +356,13 @@ void TermWindow::key_down(XKeyEvent* event)
 				draw();
 				}
 			return;
+			}
+		else if (keySym == XK_Pause) {
+			settings.read_settings_files();
+			XftFontClose(display, xft_font);
+			xft_font = XftFontOpenName(display, screen, settings.font_spec.c_str());
+			screen_size_changed();
+			draw();
 			}
 		}
 

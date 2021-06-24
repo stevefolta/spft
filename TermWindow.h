@@ -40,6 +40,7 @@ class TermWindow {
 
 		Atom wm_delete_window_atom;
 
+		void	screen_size_changed();
 		void	key_down(XKeyEvent* event);
 		int	displayed_lines() { return height / xft_font->height; }
 		void	scroll_to_bottom() { top_line = -1; }
