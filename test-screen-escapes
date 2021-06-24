@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+import time, sys
+
+intra_test_time = 1
+inter_test_time = 2
+
+alt_screen = False
+
+csi = "\x1B["
+reset = f"{csi}0m"
+clear_to_eos = f"{csi}J"
+clear_screen = f"{csi}2J"
+
+def up(n):
+	return f"{csi}{n}A"
+
+def test_start(banner):
+	print(f"=== {banner} ===")
+	print()
+
+def test_end(num_lines):
+	time.sleep(inter_test_time)
+	print(f"{up(num_lines + 2)}{clear_to_eos}", end = '', flush = True)
+
+def clear_to_eos_test():
+	test_start("Clear to end of screen")
+	print(f"This text...")
+	print(f"...will be deleted")
+	time.sleep(intra_test_time)
+	print(f"{up(2)}{csi}J", end = '', flush = True)
+	test_end(0)
+
+def null_test():
+	test_start("Null")
+	test_end(0)
+
+tests = {
+	'clear-to-eos': clear_to_eos_test,
+	'null': null_test,
+	}
+
+did_a_test = False
+for arg in sys.argv[1:]:
+	if arg == "alt":
+		if not alt_screen:
+			print(f"{csi}?1049h{clear_screen}", end = '', flush = True)
+			alt_screen = True
+	elif arg == "!alt":
+		if alt_screen:
+			print(f"{csi}?1049l", end = '', flush = True)
+			alt_screen = False
+	else:
+		tests[arg]()
+		did_a_test = True
+
+if alt_screen:
+	print(f"{csi}?1049l", end = '', flush = True)
+
+if not did_a_test:
+	print(f"Usage: {sys.argv[0]} [<test> | alt | !alt]...")
+	print(f'"alt" enters alternate-screen mode, "!alt" exits it.')
+	print(f"Available tests: {', '.join(tests.keys())}")
+
+
