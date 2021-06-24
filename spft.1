@@ -1,0 +1,54 @@
+.TH spft 1
+.SH NAME
+spft - simple proportional-font terminal
+
+.SH SYNOPSIS
+.B spft
+
+.SH DESCRIPTION
+.B spft
+is a simple terminal emulator that supports proportional (that is, non-monospace) fonts.
+
+.SH KEYS
+.TP
+.B Shift-PageUp, Shift-PageDown
+Scroll up and down in the history.
+
+.SH CONFIGURATION
+spft can be configured using the \(lq$XDG_CONFIG_HOME/spft/settings\(rq file
+(\(lq~/.config/spft/settings\(rq by default).  In this file, \(lq#\(rq
+introduces a comment that runs to the end of the line.  Everything else is a
+series of settings, in the form
+.RI \(lq name
+=
+.IR value \(rq.
+These settings can optionally be separated by commas or semicolons, but this is not necessary.
+For settings that use a string value, the string must be enclosed in double or single quotes.
+.TP
+.B font
+A string representing the font to use, in the FontConfig format.  See
+<https://www.freedesktop.org/software/fontconfig/fontconfig-user.html#AEN36>.
+.TP
+.B default_foreground_color, default_background_color
+Numbers representing these colors.  Small numbers are ANSI colors, so if you
+want to change to a dark theme, you can use \(lqdefault_foreground_color = 15,
+default_background_color = 0\(rq.  Numbers with the high bit set are RGB colors
+in the form 0x80rrggbb.
+.TP
+.B term_name
+A string that becomes the $TERM.  Defaults to \(lqxterm\(rq.
+.TP
+.B estimated_column_width
+A floating-point number representing an estimate of the width of the average
+character used in the font, as a percentage of the width of the capital
+\(lqM\(rq.
+This affects how many columns programs think they have available.  If this is
+too large, you'll have a lot of unused space on the right side of the window.
+If it's too small, you can have characters (and even the cursor) running off
+the right edge of the screen where you can't see them.
+
+.SH SEE ALSO
+.BR st (1),
+.BR mlterm (1)
+
+
