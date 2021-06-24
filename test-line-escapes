@@ -23,7 +23,7 @@ print(f"xxx xar\b\b\b\b\b\b\bfoo b")
 # Unsplitting a run.
 print(f"{greenback}xxx x{reset}ar\b\b\b\b\b\b\bfoo b")
 # Replacing multiple runs.
-print(f"{csi}31mx{csi}32mx{csi}33mx {csi}34mx{reset}ar\b\b\b\b\b\b\bfoo b")
+print(f"{csi}31mx{csi}32mx{csi}33mx {csi}34mx{reset}ar\rfoo b")
 # !!! NEED MORE! AND DELETION! !!!
 
 

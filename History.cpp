@@ -158,6 +158,7 @@ int History::add_input(const char* input, int length)
 
 			case '\r':
 				current_column = 0;
+				at_end_of_line = false;
 				break;
 
 			case '\n':
