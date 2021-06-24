@@ -12,6 +12,9 @@ reset = f"{csi}0m"
 clear_to_eos = f"{csi}J"
 clear_screen = f"{csi}2J"
 
+def print_raw(*args, **kwargs):
+	print(*args, **kwargs, end = '', flush = True)
+
 def up(n):
 	return f"{csi}{n}A"
 
@@ -21,7 +24,7 @@ def test_start(banner):
 
 def test_end(num_lines):
 	time.sleep(inter_test_time)
-	print(f"{up(num_lines + 2)}{clear_to_eos}", end = '', flush = True)
+	print_raw(f"{up(num_lines + 2)}{clear_to_eos}")
 
 def clear_to_eos_test():
 	test_start("Clear to end of screen")
@@ -31,14 +34,32 @@ def clear_to_eos_test():
 	print(f"{up(2)}{csi}J", end = '', flush = True)
 	test_end(0)
 
+def delete_lines_test():
+	test_start("Delete lines")
+	print(f"======")
+	for i in range(5):
+		print(i + 1)
+	print(f"======")
+	time.sleep(intra_test_time)
+	print_raw(f"{up(6)}{csi}2M")
+	# Only test the margin version in full-screen, since we can't (yet)
+	# interrogate the cursor position.
+	if (alt_screen):
+		time.sleep(intra_test_time)
+		print_raw(f"{csi}4;6r{csi}M{csi}r")
+	test_end(1)
+
 def null_test():
 	test_start("Null")
 	test_end(0)
 
 tests = {
 	'clear-to-eos': clear_to_eos_test,
+	'delete-lines': delete_lines_test,
 	'null': null_test,
 	}
+
+
 
 did_a_test = False
 for arg in sys.argv[1:]:

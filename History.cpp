@@ -441,6 +441,11 @@ const char* History::parse_csi(const char* p, const char* end)
 			insert_lines(args[0] ? args[0] : 1);
 			break;
 
+		case 'M':
+			// Delete lines (DL).
+			delete_lines(args[0] ? args[0] : 1);
+			break;
+
 		case 'P':
 			// Delete Character (DCH).
 			line(current_line)->delete_characters(current_column, args[0] ? args[0] : 1);
@@ -694,6 +699,28 @@ void History::insert_lines(int num_lines)
 			lines[dest_index] = lines[src_index];
 			lines[src_index] = new Line();
 			}
+		}
+
+	update_at_end_of_line();
+}
+
+
+void History::delete_lines(int num_lines)
+{
+	if (is_in_alternate_screen() || bottom_margin >= 0) {
+		// Scrolling a particular area.
+		int effective_bottom_margin = bottom_margin;
+		if (effective_bottom_margin < 0) {
+			// Must be in alternate screen.
+			effective_bottom_margin = lines_on_screen - 1;
+			}
+		scroll_up(
+			current_line, calc_screen_top_line() + effective_bottom_margin,
+			num_lines);
+		}
+	else {
+		scroll_up(current_line, last_line, num_lines);
+		last_line -= num_lines;
 		}
 
 	update_at_end_of_line();
