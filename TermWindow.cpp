@@ -413,6 +413,12 @@ void TermWindow::key_down(XKeyEvent* event)
 
 	// The normal case is just to send what XLookupString() gave us.
 	if (length > 0) {
+		// Alt-key -> ESC key.
+		if (length == 1 && (event->state & Mod1Mask) != 0) {
+			buffer[1] = buffer[0];
+			buffer[0] = '\x1B';
+			length = 2;
+			}
 		terminal->send(buffer, length);
 		scroll_to_bottom();
 		}
