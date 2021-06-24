@@ -357,12 +357,13 @@ void TermWindow::key_down(XKeyEvent* event)
 				}
 			return;
 			}
-		else if (keySym == XK_Pause) {
+		else if (keySym == XK_Insert) {
 			settings.read_settings_files();
 			XftFontClose(display, xft_font);
 			xft_font = XftFontOpenName(display, screen, settings.font_spec.c_str());
 			screen_size_changed();
 			draw();
+			return;
 			}
 		}
 
