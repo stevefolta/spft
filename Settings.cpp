@@ -10,7 +10,7 @@
 
 
 Settings settings = {
-	"Helvetica Neue-18:style=Light",
+	"Helvetica Neue,sans\\-serif-17:style=Light",
 	"xterm",
 	0,
 	15,
