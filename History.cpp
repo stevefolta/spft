@@ -34,6 +34,31 @@ History::~History()
 }
 
 
+void History::set_lines_on_screen(int new_lines_on_screen)
+{
+	if (is_in_alternate_screen()) {
+		// We assume the "alternate screen" is a "full screen" mode.  Make sure
+		// it's got the exact correct number of lines.
+		if (new_lines_on_screen > lines_on_screen) {
+			// Adding lines.
+			int delta = new_lines_on_screen - lines_on_screen;
+			for (int i = delta; i > 0; --i)
+				allocate_new_line();
+			if (bottom_margin >= 0)
+				bottom_margin += delta;
+			}
+		else {
+			// (Potentially) deleting lines.
+			last_line -= lines_on_screen - new_lines_on_screen;
+			if (current_line > last_line)
+				current_line = last_line;
+			}
+		}
+
+	lines_on_screen = new_lines_on_screen;
+}
+
+
 int64_t History::num_lines()
 {
 	return last_line;
@@ -216,12 +241,16 @@ void History::allocate_new_line()
 {
 	last_line += 1;
 	if (last_line >= capacity) {
-		// History is full, we'll recycle the previous first line.
-		lines[first_line_index]->clear();
-		first_line += 1;
-		first_line_index += 1;
-		if (first_line_index >= capacity)
-			first_line_index = 0;
+		// History is full, we'll recycle the previous first line if necessary.
+		// (It might not be necessary because window resizing can delete lines
+		// from the bottom.)
+		if (line_index(last_line) == first_line_index) {
+			lines[first_line_index]->clear();
+			first_line += 1;
+			first_line_index += 1;
+			if (first_line_index >= capacity)
+				first_line_index = 0;
+			}
 		}
 	else {
 		// We may not have allocated the Line yet.

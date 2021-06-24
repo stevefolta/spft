@@ -17,9 +17,7 @@ class History {
 		~History();
 		void	set_terminal(Terminal* new_terminal) { terminal = new_terminal; }
 
-		void	set_lines_on_screen(int new_lines_on_screen) {
-			lines_on_screen = new_lines_on_screen;
-			}
+		void	set_lines_on_screen(int new_lines_on_screen);
 
 		int64_t	num_lines();
 		Line*	line(int64_t which_line) {
@@ -33,6 +31,7 @@ class History {
 		int64_t	get_last_line() { return last_line; }
 		int64_t	get_current_line() { return current_line; }
 		int	get_current_column() { return current_column; }
+		bool	is_in_alternate_screen() { return alternate_screen_top_line >= 0; }
 		bool	cursor_enabled;
 
 	private:
