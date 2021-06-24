@@ -244,8 +244,9 @@ void History::allocate_new_line()
 		// History is full, we'll recycle the previous first line if necessary.
 		// (It might not be necessary because window resizing can delete lines
 		// from the bottom.)
-		if (line_index(last_line) == first_line_index) {
-			lines[first_line_index]->clear();
+		int last_line_index = line_index(last_line);
+		lines[last_line_index]->clear();
+		if (last_line_index == first_line_index) {
 			first_line += 1;
 			first_line_index += 1;
 			if (first_line_index >= capacity)
