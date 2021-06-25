@@ -83,6 +83,17 @@ class History {
 
 		void	enter_alternate_screen();
 		void	exit_alternate_screen();
+
+		struct Arguments {
+			enum {
+				max_args = 20,
+				};
+			int	args[max_args];
+			int	num_args;
+			char	private_code_type;
+
+			const char*	parse(const char* p, const char* end);
+			};
 	};
 
 

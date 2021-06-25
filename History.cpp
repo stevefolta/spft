@@ -303,41 +303,10 @@ const char* History::parse_csi(const char* p, const char* end)
 #endif
 
 	// Arguments.
-	static const int max_args = 20;
-	int args[max_args];
-	int num_args = 0;
-	for (int i = 0; i < max_args; ++i)
-		args[i] = 0;
-	bool private_code = false;
-	while (true) {
-		if (p >= end)
-			return nullptr;
-		c = *p;
-		if (c >= '0' && c <= '9') {
-			if (num_args < max_args) {
-				args[num_args] *= 10;
-				args[num_args] += c - '0';
-				}
-			p += 1;
-			}
-		else if (c == ';') {
-			num_args += 1;
-			p += 1;
-			}
-		else if (c == '?') {
-			private_code = true;
-			p += 1;
-			}
-		else if (c >= 0x30 && c <= 0x3F) {
-			// Valid, but we ignore it.
-			p += 1;
-			}
-		else
-			break;
-		}
-	// There's always one more arg than there are semicolons.  This implies
-	// there's always at least one arg.
-	num_args += 1;
+	Arguments args;
+	p = args.parse(p, end);
+	if (p == nullptr)
+		return nullptr;
 
 	// "Intermediate bytes".
 	// We ignore these.
@@ -355,12 +324,12 @@ const char* History::parse_csi(const char* p, const char* end)
 	if (p >= end)
 		return nullptr;
 	c = *p++;
-	if (!private_code)
+	if (args.private_code_type == 0)
 	switch (c) {
 		case 'A':
 			// Cursor up.
 			{
-			current_line -= args[0] ? args[0] : 1;
+			current_line -= args.args[0] ? args.args[0] : 1;
 			int64_t screen_top_line = calc_screen_top_line();
 			if (current_line < screen_top_line)
 				current_line = screen_top_line;
@@ -371,7 +340,7 @@ const char* History::parse_csi(const char* p, const char* end)
 		case 'B':
 			// Cursor down.
 			{
-			current_line += args[0] ? args[0] : 1;
+			current_line += args.args[0] ? args.args[0] : 1;
 			int64_t screen_bottom_line = calc_screen_bottom_line();
 			if (current_line > screen_bottom_line)
 				current_line = screen_bottom_line;
@@ -383,14 +352,14 @@ const char* History::parse_csi(const char* p, const char* end)
 		case 'C':
 			// Cursor forward.
 			{
-			current_column += args[0] ? args[0] : 1;
+			current_column += args.args[0] ? args.args[0] : 1;
 			ensure_current_column();
 			}
 			break;
 
 		case 'D':
 			// Cursor back.
-			current_column -= args[0] ? args[0] : 1;
+			current_column -= args.args[0] ? args.args[0] : 1;
 			if (current_column < 0)
 				current_column = 0;
 			at_end_of_line = false;
@@ -398,8 +367,9 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'H':
 			// Cursor Position.
-			current_line = calc_screen_top_line() + (args[0] ? args[0] - 1 : 0);
-			current_column = args[1] ? args[1] - 1 : 0;
+			current_line =
+				calc_screen_top_line() + (args.args[0] ? args.args[0] - 1 : 0);
+			current_column = args.args[1] ? args.args[1] - 1 : 0;
 			ensure_current_line();
 			ensure_current_column();
 			update_at_end_of_line();
@@ -407,11 +377,11 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'J':
 			// Erase in Display.
-			if (args[0] == 0)
+			if (args.args[0] == 0)
 				clear_to_end_of_screen();
-			else if (args[0] == 1)
+			else if (args.args[0] == 1)
 				clear_to_beginning_of_screen();
-			else if (args[0] == 2 || args[0] == 3)
+			else if (args.args[0] == 2 || args.args[0] == 3)
 				clear_screen();
 			break;
 
@@ -419,16 +389,16 @@ const char* History::parse_csi(const char* p, const char* end)
 			// Erase in Line.
 			{
 			Line* cur_line = line(current_line);
-			if (args[0] == 0) {
+			if (args.args[0] == 0) {
 				cur_line->clear_to_end_from(current_column);
 				at_end_of_line = true;
 				}
-			else if (args[0] == 1) {
+			else if (args.args[0] == 1) {
 				cur_line->clear_from_beginning_to(current_column);
 				cur_line->prepend_spaces(current_column, current_style);
 				update_at_end_of_line();
 				}
-			else if (args[0] == 2) {
+			else if (args.args[0] == 2) {
 				cur_line->clear();
 				if (current_column > 0)
 					cur_line->prepend_spaces(current_column, current_style);
@@ -439,59 +409,80 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'L':
 			// Insert blank lines (IL).
-			insert_lines(args[0] ? args[0] : 1);
+			insert_lines(args.args[0] ? args.args[0] : 1);
 			break;
 
 		case 'M':
 			// Delete lines (DL).
-			delete_lines(args[0] ? args[0] : 1);
+			delete_lines(args.args[0] ? args.args[0] : 1);
 			break;
 
 		case 'P':
 			// Delete Character (DCH).
-			line(current_line)->delete_characters(current_column, args[0] ? args[0] : 1);
+			line(current_line)->delete_characters(current_column, args.args[0] ? args.args[0] : 1);
 			update_at_end_of_line();
 			break;
 
 		case 'm':
 			// Select Graphic Rendition (SGR).
-			switch (args[0]) {
-				case 0:
-					current_style.reset();
-					break;
-				case 30: case 31: case 32: case 33:
-				case 34: case 35: case 36: case 37:
-					// Set foreground color.
-					current_style.foreground_color = args[0] - 30;
-					break;
-				case 38:
-					// Set foreground color.
-					if (args[1] == 5)
-						current_style.foreground_color = args[2];
-					else if (args[1] == 2) {
-						current_style.foreground_color =
-							Colors::true_color_bit | args[2] << 16 | args[3] << 8 | args[4];
-						}
-					break;
-				case 40: case 41: case 42: case 43:
-				case 44: case 45: case 46: case 47:
-					// Set background color.
-					current_style.background_color = args[0] - 40;
-					break;
-				case 48:
-					// Set background color.
-					if (args[1] == 5)
-						current_style.background_color = args[2];
-					else if (args[1] == 2) {
-						current_style.background_color =
-							Colors::true_color_bit | args[2] << 16 | args[3] << 8 | args[4];
-						}
-					break;
+			if (args.num_args == 0) {
+				// Default to at least one arg (which will have the default value
+				// of zero).
+				args.num_args = 1;
+				}
+			for (int which_arg = 0; which_arg < args.num_args; ++which_arg) {
+				switch (args.args[which_arg]) {
+					case 0:
+						current_style.reset();
+						break;
+					case 30: case 31: case 32: case 33:
+					case 34: case 35: case 36: case 37:
+						// Set foreground color.
+						current_style.foreground_color = args.args[which_arg] - 30;
+						break;
+					case 38:
+						// Set foreground color.
+						which_arg += 1;
+						if (args.args[which_arg] == 5) {
+							which_arg += 1;
+							current_style.foreground_color = args.args[which_arg];
+							}
+						else if (args.args[which_arg] == 2) {
+							current_style.foreground_color =
+								Colors::true_color_bit |
+								args.args[which_arg + 1] << 16 |
+								args.args[which_arg + 2] << 8 |
+								args.args[which_arg + 3];
+							which_arg += 3;
+							}
+						break;
+					case 40: case 41: case 42: case 43:
+					case 44: case 45: case 46: case 47:
+						// Set background color.
+						current_style.background_color = args.args[which_arg] - 40;
+						break;
+					case 48:
+						// Set background color.
+						which_arg += 1;
+						if (args.args[which_arg] == 5) {
+							which_arg += 1;
+							current_style.background_color = args.args[which_arg];
+							}
+						else if (args.args[which_arg] == 2) {
+							current_style.background_color =
+								Colors::true_color_bit |
+								args.args[which_arg + 1] << 16 |
+								args.args[which_arg + 2] << 8 |
+								args.args[which_arg + 3];
+							which_arg += 3;
+							}
+						break;
+					}
 				}
 			break;
 
 		case 'n':
-			if (args[0] == 6) {
+			if (args.args[0] == 6) {
 				// Device Status Report (DSR).
 				char report[32];
 				sprintf(
@@ -506,8 +497,8 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'r':
 			// Set scroll margins (DECSTBM).
-			top_margin = args[0] ? args[0] - 1 : 0;
-			bottom_margin = args[1] ? args[1] - 1 : -1;
+			top_margin = args.args[0] ? args.args[0] - 1 : 0;
+			bottom_margin = args.args[1] ? args.args[1] - 1 : -1;
 			if (top_margin >= bottom_margin) {
 				// Invalid; reset them.
 				top_margin = 0;
@@ -525,26 +516,26 @@ const char* History::parse_csi(const char* p, const char* end)
 		}
 
 	// Private codes.
-	else {
+	else if (args.private_code_type == '?') {
 		switch (c) {
 			case 'h':
 				// Set Mode (SM).
-				for (int i = 0; i < num_args; ++i) {
-					bool handled = set_private_mode(args[i], true);
+				for (int i = 0; i < args.num_args; ++i) {
+					bool handled = set_private_mode(args.args[i], true);
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 					if (!handled)
-						printf("- Unimplemented set mode: ?%d\n", args[i]);
+						printf("- Unimplemented set mode: ?%d\n", args.args[i]);
 #endif
 					}
 				break;
 
 			case 'l':
 				// Reset Mode (RM).
-				for (int i = 0; i < num_args; ++i) {
-					bool handled = set_private_mode(args[i], false);
+				for (int i = 0; i < args.num_args; ++i) {
+					bool handled = set_private_mode(args.args[i], false);
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 					if (!handled)
-						printf("- Unimplemented reset mode: ?%d\n", args[i]);
+						printf("- Unimplemented reset mode: ?%d\n", args.args[i]);
 #endif
 					}
 				break;
@@ -795,6 +786,53 @@ void History::exit_alternate_screen()
 	update_at_end_of_line();
 }
 
+
+
+const char* History::Arguments::parse(const char* p, const char* end)
+{
+	char c;
+
+	// Clear.
+	num_args = 0;
+	for (int i = 0; i < max_args; ++i)
+		args[i] = 0;
+	private_code_type = 0;
+
+	// Parse.
+	bool arg_started = false;
+	while (true) {
+		if (p >= end)
+			return nullptr;
+		c = *p;
+		if (c >= '0' && c <= '9') {
+			if (num_args < max_args) {
+				args[num_args] *= 10;
+				args[num_args] += c - '0';
+				arg_started = true;
+				}
+			p += 1;
+			}
+		else if (c == ';') {
+			num_args += 1;
+			arg_started = false;
+			p += 1;
+			}
+		else if (c == '?' || c == '<' || c == '=' || c == '>') {
+			private_code_type = c;
+			p += 1;
+			}
+		else if (c >= 0x30 && c <= 0x3F) {
+			// Valid, but we ignore it.
+			p += 1;
+			}
+		else
+			break;
+		}
+	if (arg_started)
+		num_args += 1;
+
+	return p;
+}
 
 
 
