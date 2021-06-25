@@ -435,6 +435,12 @@ const char* History::parse_csi(const char* p, const char* end)
 					case 0:
 						current_style.reset();
 						break;
+					case 7:
+						current_style.inverse = true;
+						break;
+					case 27:
+						current_style.inverse = false;
+						break;
 					case 30: case 31: case 32: case 33:
 					case 34: case 35: case 36: case 37:
 						// Set foreground color.

@@ -7,6 +7,9 @@ reset = f"{csi}0m"
 greenback = f"{csi}43m"
 greyback = f"{csi}48;2;192;192;192m"
 
+def print_raw(*args, **kwargs):
+	print(*args, **kwargs, end = '', flush = True)
+
 print(f'foo{csi}Cbar')
 print(f'foo xar{csi}D{csi}D{csi}Db')
 print(f'{greenback}foo {greyback}bar{reset}')
@@ -35,6 +38,16 @@ def cursor_disable_test():
 	time.sleep(1)
 	print()
 # cursor_disable_test()
+
+# Inverse.
+def inverse_test():
+	print_raw(f"{csi}7mfoo{csi}27m bar\r")
+	for i in range(7):
+		time.sleep(1)
+		print_raw(f"{csi}C")
+	time.sleep(1)
+	print()
+# inverse_test()
 
 
 

@@ -199,16 +199,22 @@ void TermWindow::draw()
 				(const FcChar8*) run->bytes(), num_bytes, &glyph_info);
 
 			// Draw the run background (if it's not the default).
-			if (run->style.background_color != settings.default_background_color) {
+			uint32_t foreground_color = run->style.foreground_color;
+			uint32_t background_color = run->style.background_color;
+			if (run->style.inverse) {
+				foreground_color = run->style.background_color;
+				background_color = run->style.foreground_color;
+				}
+			if (background_color != settings.default_background_color) {
 				XftDrawRect(
-					xft_draw, colors.xft_color(run->style.background_color),
+					xft_draw, colors.xft_color(background_color),
 					x, y - xft_font->ascent,
 					glyph_info.xOff, xft_font->height);
 				}
 
 			// Draw the run text.
 			XftDrawStringUtf8(
-				xft_draw, colors.xft_color(run->style.foreground_color), xft_font,
+				xft_draw, colors.xft_color(foreground_color), xft_font,
 				x, y,
 				(const FcChar8*) run->bytes(), num_bytes);
 
@@ -235,12 +241,12 @@ void TermWindow::draw()
 					int cursor_width = glyph_info.xOff;
 					// Background.
 					XftDrawRect(
-						xft_draw, colors.xft_color(run->style.foreground_color), 
+						xft_draw, colors.xft_color(foreground_color), 
 						cursor_x, y - xft_font->ascent,
 						cursor_width, xft_font->height);
 					// Character.
 					XftDrawStringUtf8(
-						xft_draw, colors.xft_color(run->style.background_color), xft_font,
+						xft_draw, colors.xft_color(background_color), xft_font,
 						cursor_x, y,
 						(const FcChar8*) char_bytes, char_num_bytes);
 					}

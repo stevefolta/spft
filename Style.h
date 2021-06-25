@@ -7,26 +7,26 @@
 
 class Style {
 	public:
-		char	flags;
 		uint32_t	foreground_color, background_color;
+		bool	inverse : 1;
 
-		Style()
-			: flags(0),
+		Style() :
 			foreground_color(settings.default_foreground_color),
-			background_color(settings.default_background_color)
+			background_color(settings.default_background_color),
+			inverse(false)
 		{}
 
 		void	reset() {
-			flags = 0;
 			foreground_color = settings.default_foreground_color;
 			background_color = settings.default_background_color;
+			inverse = false;
 			}
 
 		bool	operator==(Style& other) {
 			return
-				flags == other.flags &&
 				foreground_color == other.foreground_color &&
-				background_color == other.background_color;
+				background_color == other.background_color &&
+				inverse == other.inverse;
 			}
 		bool	operator!=(Style& other) {
 			return !(*this == other);
