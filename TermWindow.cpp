@@ -12,7 +12,7 @@
 
 
 TermWindow::TermWindow()
-	: pixmap(0)
+	: pixmap(0), xft_draw(0)
 {
 	top_line = -1;
 	closed = false;
