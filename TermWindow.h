@@ -21,6 +21,7 @@ class TermWindow {
 		void	tick();
 		void	draw();
 		void	resized(unsigned int new_width, unsigned int new_height);
+		void	set_title(const char* title);
 
 	protected:
 		bool	closed;
@@ -39,6 +40,7 @@ class TermWindow {
 		int64_t top_line;
 
 		Atom wm_delete_window_atom;
+		Atom wm_name_atom;
 
 		void	screen_size_changed();
 		void	key_down(XKeyEvent* event);

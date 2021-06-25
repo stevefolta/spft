@@ -69,7 +69,9 @@ TermWindow::TermWindow()
 
 	// Window manager.
 	wm_delete_window_atom = XInternAtom(display, "WM_DELETE_WINDOW", False);
+	wm_name_atom = XInternAtom(display, "_NET_WM_NAME", False);
 	XSetWMProtocols(display, window, &wm_delete_window_atom, 1);
+	set_title("spft");
 
 	XMapWindow(display, window);
 	XSync(display, False);
@@ -299,6 +301,16 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
 
 	screen_size_changed();
+}
+
+
+void TermWindow::set_title(const char* title)
+{
+	XTextProperty property;
+	Xutf8TextListToTextProperty(display, (char**) &title, 1, XUTF8StringStyle, &property);
+	XSetWMName(display, window, &property);
+	XSetTextProperty(display, window, &property, wm_name_atom);
+	XFree(property.value);
 }
 
 
