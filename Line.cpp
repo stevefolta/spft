@@ -33,6 +33,13 @@ void Line::append_characters(const char* bytes, int length, Style style)
 
 void Line::replace_characters(int column, const char* bytes, int length, Style style)
 {
+	if (runs.empty()) {
+		Run* run = new Run(style);
+		run->append_characters(bytes, length);
+		runs.push_back(run);
+		return;
+		}
+
 	// First insert the new characters.
 	int num_chars = UTF8::num_characters(bytes, length);
 	int columns_left = column;
