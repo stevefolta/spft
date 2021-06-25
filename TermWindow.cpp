@@ -39,7 +39,7 @@ TermWindow::TermWindow()
 	//*** TODO
 	int x = 0;
 	int y = 0;
-	width = 600;
+	width = 700;
 	height = 500;
 
 	Window root_window = XRootWindow(display, screen);
@@ -55,17 +55,13 @@ TermWindow::TermWindow()
 	memset(&gc_values, 0, sizeof(gc_values));
 	gc_values.graphics_exposures = False;
 	gc = XCreateGC(display, root_window, GCGraphicsExposures, &gc_values);
-	pixmap =
-		XCreatePixmap(
-			display, window, width, height,
-			DefaultDepth(display, screen));
-	// Clear the pixmap.
-	XSetForeground(display, gc, attributes.background_pixel);
-	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
 
 	// Xft.
 	xft_font = XftFontOpenName(display, screen, settings.font_spec.c_str());
-	xft_draw = XftDrawCreate(display, pixmap, visual, XDefaultColormap(display, screen));
+
+	// Create pixmap, etc.
+	// Need to have the xft_font before we do this.
+	resized(width, height);
 
 	// Cursor.
 	Cursor cursor = XCreateFontCursor(display, XC_xterm);
@@ -287,9 +283,18 @@ void TermWindow::resized(unsigned int new_width, unsigned int new_height)
 	// Set up drawing (new pixmap etc.).
 	width = new_width;
 	height = new_height;
-	XFreePixmap(display, pixmap);
+	if (pixmap)
+		XFreePixmap(display, pixmap);
 	pixmap = XCreatePixmap(display, window, width, height, DefaultDepth(display, screen));
-	XftDrawChange(xft_draw, pixmap);
+	if (xft_draw)
+		XftDrawChange(xft_draw, pixmap);
+	else {
+		xft_draw =
+			XftDrawCreate(
+				display, pixmap,
+				XDefaultVisual(display, screen),
+				XDefaultColormap(display, screen));
+		}
 	XSetForeground(display, gc, attributes.background_pixel);
 	XFillRectangle(display, pixmap, gc, 0, 0, width, height);
 
