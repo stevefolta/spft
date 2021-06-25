@@ -15,6 +15,8 @@ TermWindow::TermWindow()
 	: pixmap(0), xft_draw(0)
 {
 	top_line = -1;
+	first_selected_line = last_selected_line = -1;
+	first_selected_column = selection_end_column = 0;
 	closed = false;
 
 	history = new History();
@@ -186,74 +188,152 @@ void TermWindow::draw()
 	int y = xft_font->ascent;
 	int64_t current_line = history->get_current_line();
 	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
+		bool line_contains_cursor =
+			which_line == current_line && history->cursor_enabled;
+		bool line_contains_inversity_change =
+			line_contains_cursor ||
+			which_line == first_selected_line || which_line == last_selected_line;
+
 		// Draw the runs in the line.
 		int x = 0;
-		int chars_drawn = 0; 	// Only updated for the line with the cursor on it.
+		int chars_drawn = 0; 	// Only updated for the line with the cursor or a selection change on it.
 		Line* line = history->line(which_line);
 		int current_column = history->get_current_column();
 		for (auto run: *line) {
 			int num_bytes = strlen(run->bytes());
 			XGlyphInfo glyph_info;
-			XftTextExtentsUtf8(
-				display, xft_font,
-				(const FcChar8*) run->bytes(), num_bytes, &glyph_info);
 
-			// Draw the run background (if it's not the default).
 			uint32_t foreground_color = run->style.foreground_color;
 			uint32_t background_color = run->style.background_color;
 			if (run->style.inverse) {
 				foreground_color = run->style.background_color;
 				background_color = run->style.foreground_color;
 				}
-			if (background_color != settings.default_background_color) {
-				XftDrawRect(
-					xft_draw, colors.xft_color(background_color),
-					x, y - xft_font->ascent,
-					glyph_info.xOff, xft_font->height);
-				}
 
-			// Draw the run text.
-			XftDrawStringUtf8(
-				xft_draw, colors.xft_color(foreground_color), xft_font,
-				x, y,
-				(const FcChar8*) run->bytes(), num_bytes);
-
-			// Draw the cursor if it's in the run.
-			if (which_line == current_line && history->cursor_enabled) {
+			bool run_contains_inversity_change = false;
+			if (line_contains_inversity_change) {
 				int run_chars = run->num_characters();
-				if (current_column >= chars_drawn && current_column < chars_drawn + run_chars) {
-					int bytes_before_cursor =
-						UTF8::bytes_for_n_characters(
-							run->bytes(), num_bytes, current_column - chars_drawn);
-					XGlyphInfo glyph_info; 	// Don't touch the outer one.
-					XftTextExtentsUtf8(
-						display, xft_font,
-						(const FcChar8*) run->bytes(), bytes_before_cursor,
-						&glyph_info);
-					int cursor_x = x + glyph_info.xOff;
-					const char* char_bytes = run->bytes() + bytes_before_cursor;
-					int char_num_bytes =
-						UTF8::bytes_for_n_characters(char_bytes, num_bytes - bytes_before_cursor, 1);
-					XftTextExtentsUtf8(
-						display, xft_font,
-						(const FcChar8*) char_bytes, char_num_bytes,
-						&glyph_info);
-					int cursor_width = glyph_info.xOff;
-					// Background.
-					XftDrawRect(
-						xft_draw, colors.xft_color(foreground_color), 
-						cursor_x, y - xft_font->ascent,
-						cursor_width, xft_font->height);
-					// Character.
-					XftDrawStringUtf8(
-						xft_draw, colors.xft_color(background_color), xft_font,
-						cursor_x, y,
-						(const FcChar8*) char_bytes, char_num_bytes);
+				int run_end = chars_drawn + run_chars;
+				bool run_contains_cursor =
+					line_contains_cursor &&
+					current_column >= chars_drawn &&
+					current_column < run_end;
+				if (run_contains_cursor)
+					run_contains_inversity_change = true;
+				else {
+					run_contains_inversity_change =
+						(which_line == first_selected_line &&
+						 first_selected_column > chars_drawn &&
+						 first_selected_column < run_end) ||
+						(which_line == last_selected_line &&
+						 selection_end_column > chars_drawn &&
+						 selection_end_column < run_end);
 					}
-				chars_drawn += run_chars;
 				}
 
-			x += glyph_info.xOff; 	// Not "width".  It'd be nice if Xft were documented...
+			// The simple case: drawing the entire run at once.
+			if (!run_contains_inversity_change) {
+				XftTextExtentsUtf8(
+					display, xft_font,
+					(const FcChar8*) run->bytes(), num_bytes, &glyph_info);
+
+				bool inversity =
+					(line_contains_cursor && current_column == chars_drawn) ^
+					((which_line > first_selected_line && which_line < last_selected_line) ||
+					 (which_line == first_selected_line && which_line < last_selected_line &&
+					  first_selected_column <= chars_drawn) ||
+					 (which_line == last_selected_line && which_line > first_selected_line &&
+					  selection_end_column > chars_drawn) ||
+					 (which_line == first_selected_line && which_line == last_selected_line &&
+					  chars_drawn >= first_selected_column && chars_drawn < selection_end_column));
+
+				// Draw the run background (if it's not the default).
+				uint32_t cur_background = (inversity ? foreground_color : background_color);
+				if (cur_background != settings.default_background_color) {
+					XftDrawRect(
+						xft_draw, colors.xft_color(cur_background),
+						x, y - xft_font->ascent,
+						glyph_info.xOff, xft_font->height);
+					}
+
+				// Draw the run text.
+				XftDrawStringUtf8(
+					xft_draw,
+					colors.xft_color(inversity? background_color : foreground_color),
+					xft_font,
+					x, y,
+					(const FcChar8*) run->bytes(), num_bytes);
+
+				x += glyph_info.xOff; 	// Not "width".  It'd be nice if Xft were documented...
+				if (line_contains_inversity_change)
+					chars_drawn += run->num_characters();
+				}
+
+			// The more complicated case: inversity changes within the run
+			// (because it contains the cursor or the start or end of the selection).
+			else {
+				int run_chars = run->num_characters();
+				int run_end_char = chars_drawn + run_chars;
+				const char* subrun_start_byte = run->bytes();
+				while (chars_drawn < run_end_char) {
+					int next_flip = run_end_char;
+					if (line_contains_cursor) {
+						if (current_column == chars_drawn)
+							next_flip = current_column + 1;
+						else if (current_column > chars_drawn && current_column < run_end_char)
+							next_flip = current_column;
+						}
+					if (which_line == first_selected_line) {
+						if (first_selected_column > chars_drawn && first_selected_column < next_flip)
+							next_flip = first_selected_column;
+						}
+					if (which_line == last_selected_line) {
+						if (selection_end_column > chars_drawn && selection_end_column < next_flip)
+							next_flip = selection_end_column;
+						}
+
+					// Figure out the subrun.
+					int subrun_num_chars = next_flip - chars_drawn;
+					int subrun_num_bytes =
+						UTF8::bytes_for_n_characters(
+							subrun_start_byte,
+							num_bytes - (subrun_start_byte - run->bytes()),
+							subrun_num_chars);
+					XftTextExtentsUtf8(
+						display, xft_font,
+						(const FcChar8*) subrun_start_byte, subrun_num_bytes,
+						&glyph_info);
+					int subrun_width = glyph_info.xOff;
+
+					bool inversity =
+						(line_contains_cursor && current_column == chars_drawn) ^
+						((which_line > first_selected_line && which_line < last_selected_line) ||
+						 (which_line == first_selected_line && which_line < last_selected_line &&
+						  first_selected_column <= chars_drawn) ||
+						 (which_line == last_selected_line && which_line > first_selected_line &&
+						  selection_end_column > chars_drawn) ||
+						 (which_line == first_selected_line && which_line == last_selected_line &&
+						  chars_drawn >= first_selected_column && chars_drawn < selection_end_column));
+
+					// Draw the background.
+					uint32_t cur_background = (inversity ? foreground_color : background_color);
+					XftDrawRect(
+						xft_draw, colors.xft_color(cur_background), 
+						x, y - xft_font->ascent,
+						subrun_width, xft_font->height);
+
+					// Characters.
+					uint32_t cur_foreground = (inversity ? background_color : foreground_color);
+					XftDrawStringUtf8(
+						xft_draw, colors.xft_color(cur_foreground), xft_font,
+						x, y,
+						(const FcChar8*) subrun_start_byte, subrun_num_bytes);
+
+					chars_drawn += subrun_num_chars;
+					subrun_start_byte += subrun_num_bytes;
+					x += subrun_width;
+					}
+				}
 			}
 
 		// Draw the cursor if it's at the end of the line.

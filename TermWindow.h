@@ -38,6 +38,9 @@ class TermWindow {
 		unsigned int width, height;
 
 		int64_t top_line;
+		int64_t first_selected_line, last_selected_line;
+		int first_selected_column, selection_end_column;
+		bool has_selection() { return first_selected_line >= 0; }
 
 		Atom wm_delete_window_atom;
 		Atom wm_name_atom;
