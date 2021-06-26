@@ -15,8 +15,6 @@ TermWindow::TermWindow()
 	: pixmap(0), xft_draw(0)
 {
 	top_line = -1;
-	first_selected_line = last_selected_line = -1;
-	first_selected_column = selection_end_column = 0;
 	selecting_state = NotSelecting;
 	closed = false;
 
@@ -196,7 +194,7 @@ void TermWindow::draw()
 			which_line == current_line && history->cursor_enabled;
 		bool line_contains_inversity_change =
 			line_contains_cursor ||
-			which_line == first_selected_line || which_line == last_selected_line;
+			which_line == selection_start.line || which_line == selection_end.line;
 
 		// Draw the runs in the line.
 		int x = 0;
@@ -226,12 +224,12 @@ void TermWindow::draw()
 					run_contains_inversity_change = true;
 				else {
 					run_contains_inversity_change =
-						(which_line == first_selected_line &&
-						 first_selected_column > chars_drawn &&
-						 first_selected_column < run_end) ||
-						(which_line == last_selected_line &&
-						 selection_end_column > chars_drawn &&
-						 selection_end_column < run_end);
+						(which_line == selection_start.line &&
+						 selection_start.column > chars_drawn &&
+						 selection_start.column < run_end) ||
+						(which_line == selection_end.line &&
+						 selection_end.column > chars_drawn &&
+						 selection_end.column < run_end);
 					}
 				}
 
@@ -241,15 +239,10 @@ void TermWindow::draw()
 					display, xft_font,
 					(const FcChar8*) run->bytes(), num_bytes, &glyph_info);
 
+				SelectionPoint draw_point(which_line, chars_drawn);
 				bool inversity =
 					(line_contains_cursor && current_column == chars_drawn) ^
-					((which_line > first_selected_line && which_line < last_selected_line) ||
-					 (which_line == first_selected_line && which_line < last_selected_line &&
-					  first_selected_column <= chars_drawn) ||
-					 (which_line == last_selected_line && which_line > first_selected_line &&
-					  selection_end_column > chars_drawn) ||
-					 (which_line == first_selected_line && which_line == last_selected_line &&
-					  chars_drawn >= first_selected_column && chars_drawn < selection_end_column));
+					(draw_point >= selection_start && draw_point < selection_end);
 
 				// Draw the run background (if it's not the default).
 				uint32_t cur_background = (inversity ? foreground_color : background_color);
@@ -287,13 +280,13 @@ void TermWindow::draw()
 						else if (current_column > chars_drawn && current_column < run_end_char)
 							next_flip = current_column;
 						}
-					if (which_line == first_selected_line) {
-						if (first_selected_column > chars_drawn && first_selected_column < next_flip)
-							next_flip = first_selected_column;
+					if (which_line == selection_start.line) {
+						if (selection_start.column > chars_drawn && selection_start.column < next_flip)
+							next_flip = selection_start.column;
 						}
-					if (which_line == last_selected_line) {
-						if (selection_end_column > chars_drawn && selection_end_column < next_flip)
-							next_flip = selection_end_column;
+					if (which_line == selection_end.line) {
+						if (selection_end.column > chars_drawn && selection_end.column < next_flip)
+							next_flip = selection_end.column;
 						}
 
 					// Figure out the subrun.
@@ -309,15 +302,10 @@ void TermWindow::draw()
 						&glyph_info);
 					int subrun_width = glyph_info.xOff;
 
+					SelectionPoint draw_point(which_line, chars_drawn);
 					bool inversity =
 						(line_contains_cursor && current_column == chars_drawn) ^
-						((which_line > first_selected_line && which_line < last_selected_line) ||
-						 (which_line == first_selected_line && which_line < last_selected_line &&
-						  first_selected_column <= chars_drawn) ||
-						 (which_line == last_selected_line && which_line > first_selected_line &&
-						  selection_end_column > chars_drawn) ||
-						 (which_line == first_selected_line && which_line == last_selected_line &&
-						  chars_drawn >= first_selected_column && chars_drawn < selection_end_column));
+						(draw_point >= selection_start && draw_point < selection_end);
 
 					// Draw the background.
 					uint32_t cur_background = (inversity ? foreground_color : background_color);
@@ -543,17 +531,17 @@ void TermWindow::mouse_button_down(XButtonEvent* event)
 		int64_t last_line = effective_top_line + num_lines - 1;
 		if (last_line > history->get_last_line())
 			last_line = history->get_last_line();
-		first_selected_line = effective_top_line + event->y / xft_font->height;
-		if (first_selected_line < effective_top_line)
-			first_selected_line = effective_top_line;
-		else if (first_selected_line > last_line)
-			first_selected_line = last_line;
+		selection_start.line = effective_top_line + event->y / xft_font->height;
+		if (selection_start.line < effective_top_line)
+			selection_start.line = effective_top_line;
+		else if (selection_start.line > last_line)
+			selection_start.line = last_line;
 
 		// Which column?
-		first_selected_column = column_for_pixel(first_selected_line, event->x);
+		selection_start.column = column_for_pixel(selection_start.line, event->x);
 
-		last_selected_line = first_selected_line;
-		selection_end_column = first_selected_column + 1;
+		selection_end.line = selection_start.line;
+		selection_end.column = selection_start.column + 1;
 		selecting_state = SelectingForward;
 		draw();
 		}
@@ -571,46 +559,38 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 
 	//*** TODO: Handle by-word and by-line selection.
 
-	int64_t selection_start_line =
-		(selecting_state == SelectingBackward ?
-		 last_selected_line : first_selected_line);
-	int selection_start_column =
-		(selecting_state == SelectingBackward ?
-		 selection_end_column : first_selected_column);
+	SelectionPoint cur_selection_start;
+	if (selecting_state == SelectingBackward)
+		cur_selection_start = selection_end;
+	else
+		cur_selection_start = selection_start;
 
 	// Which line are we on?
+	SelectionPoint mouse_position;
 	int64_t num_lines = displayed_lines();
 	int64_t effective_top_line = calc_effective_top_line();
 	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
-	int64_t selection_end_line = effective_top_line + event->y / xft_font->height;
-	if (selection_end_line < effective_top_line)
-		selection_end_line = effective_top_line;
-	else if (selection_end_line > last_line)
-		selection_end_line = last_line;
+	mouse_position.line = effective_top_line + event->y / xft_font->height;
+	if (mouse_position.line < effective_top_line)
+		mouse_position.line = effective_top_line;
+	else if (mouse_position.line > last_line)
+		mouse_position.line = last_line;
 
 	// Which column?
-	int cur_selection_end_column = column_for_pixel(first_selected_line, event->x);
+	mouse_position.column = column_for_pixel(mouse_position.line, event->x);
 
 	// Set the selection.
-	bool selecting_forward =
-		selection_end_line > selection_start_line ||
-		(selection_end_line == selection_start_line &&
-		 cur_selection_end_column >= selection_start_column);
-	if (selecting_forward) {
-		first_selected_line = selection_start_line;
-		first_selected_column = selection_start_column;
-		last_selected_line = selection_end_line;
-		selection_end_column = cur_selection_end_column;
-		selecting_state = SelectingForward;
+	if (mouse_position < cur_selection_start) {
+		selection_start = mouse_position;
+		selection_end = cur_selection_start;
+		selecting_state = SelectingBackward;
 		}
 	else {
-		first_selected_line = selection_end_line;
-		first_selected_column = cur_selection_end_column;
-		last_selected_line = selection_start_line;
-		selection_end_column = selection_start_column;
-		selecting_state = SelectingBackward;
+		selection_start = cur_selection_start;
+		selection_end = mouse_position;
+		selecting_state = SelectingForward;
 		}
 
 	draw();

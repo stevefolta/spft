@@ -38,9 +38,26 @@ class TermWindow {
 		unsigned int width, height;
 
 		int64_t top_line;
-		int64_t first_selected_line, last_selected_line;
-		int first_selected_column, selection_end_column;
-		bool has_selection() { return first_selected_line >= 0; }
+
+		struct SelectionPoint {
+			int64_t	line;
+			int	column;
+
+			SelectionPoint()
+				: line(-1), column(0) {}
+			SelectionPoint(int64_t line_in, int column_in)
+				: line(line_in), column(column_in) {}
+			bool operator<(SelectionPoint& other) {
+				return
+					line < other.line ||
+					(line == other.line && column < other.column);
+				}
+			bool	operator>=(SelectionPoint& other) {
+				return !(*this < other);
+				}
+			};
+		SelectionPoint selection_start, selection_end;
+		bool has_selection() { return selection_start.line >= 0; }
 		enum {
 			NotSelecting, SelectingForward, SelectingBackward,
 			};
