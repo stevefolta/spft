@@ -32,7 +32,9 @@ $(OBJECTS_DIR)/%.o: %.cpp
 	@echo Compiling $<...
 	$(QUIET) $(CPP) -c $< -g $(CFLAGS) -o $@
 
-$(PROGRAM): $(OBJECTS_DIR) $(OBJECTS)
+$(OBJECTS): | $(OBJECTS_DIR)
+
+$(PROGRAM): $(OBJECTS)
 	@echo "Linking $@..."
 	$(QUIET) $(CPP) $(filter-out $(OBJECTS_DIR),$^) -g $(LINK_FLAGS) -o $@
 	@echo "---------------------------------------------"
@@ -51,7 +53,7 @@ runnit: $(PROGRAM)
 
 .PHONY: clean
 clean:
-	rm -r $(OBJECTS_DIR)
+	rm -rf $(OBJECTS_DIR)
 
 .PHONY: tags
 tags:
