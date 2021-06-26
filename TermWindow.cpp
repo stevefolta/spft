@@ -16,6 +16,7 @@ TermWindow::TermWindow()
 {
 	top_line = -1;
 	selecting_state = NotSelecting;
+	last_click_time.tv_sec = 0;
 	closed = false;
 
 	history = new History();
@@ -523,8 +524,6 @@ void TermWindow::key_down(XKeyEvent* event)
 void TermWindow::mouse_button_down(XButtonEvent* event)
 {
 	if (event->button == Button1) {
-		//*** TODO: handle double and triple clicks.
-
 		// Which line is it on?
 		int64_t num_lines = displayed_lines();
 		int64_t effective_top_line = calc_effective_top_line();
@@ -540,9 +539,33 @@ void TermWindow::mouse_button_down(XButtonEvent* event)
 		// Which column?
 		selection_start.column = column_for_pixel(selection_start.line, event->x);
 
+		// Set the new selection.
 		selection_end.line = selection_start.line;
 		selection_end.column = selection_start.column + 1;
 		selecting_state = SelectingForward;
+
+		// Handle double- and triple-clicks.
+		struct timespec now;
+		clock_gettime(CLOCK_MONOTONIC, &now);
+		uint64_t last_click_ms =
+			last_click_time.tv_sec * 1000 + last_click_time.tv_nsec / 1e6;
+		uint64_t now_ms = now.tv_sec * 1000 + now.tv_nsec / 1e6;
+		if (now_ms - last_click_ms < settings.double_click_ms) {
+			if (selecting_by == SelectingByChar) {
+				selecting_by = SelectingByWord;
+				selection_start = start_of_word(selection_start);
+				selection_end = end_of_word(selection_start);
+				}
+			else if (selecting_by == SelectingByWord) {
+				selecting_by = SelectingByLine;
+				selection_start.column = 0;
+				selection_end.column = INT_MAX;
+				}
+			}
+		else
+			selecting_by = SelectingByChar;
+		last_click_time = now;
+
 		draw();
 		}
 
@@ -556,8 +579,6 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 {
 	if (selecting_state == NotSelecting)
 		return;
-
-	//*** TODO: Handle by-word and by-line selection.
 
 	SelectionPoint cur_selection_start;
 	if (selecting_state == SelectingBackward)
@@ -591,6 +612,14 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 		selection_start = cur_selection_start;
 		selection_end = mouse_position;
 		selecting_state = SelectingForward;
+		}
+	if (selecting_by == SelectingByWord) {
+		selection_start = start_of_word(selection_start);
+		selection_end = end_of_word(selection_end);
+		}
+	else if (selecting_by == SelectingByLine) {
+		selection_start.column = 0;
+		selection_end.column = INT_MAX;
 		}
 
 	draw();
@@ -638,6 +667,52 @@ int64_t TermWindow::calc_effective_top_line()
 	if (effective_top_line < history->get_first_line())
 		effective_top_line = history->get_first_line();
 	return effective_top_line;
+}
+
+
+static inline bool is_word_char(const char* c)
+{
+	return
+		settings.word_separator_characters.find(c) == std::string::npos &&
+		settings.additional_word_separator_characters.find(c) == std::string::npos;
+}
+
+
+TermWindow::SelectionPoint TermWindow::start_of_word(SelectionPoint point)
+{
+	// If it's already not a word, stay there.
+	char c[16];
+	Line* line = history->line(point.line);
+	line->get_character(point.column, c);
+	if (!is_word_char(c))
+		return point;
+
+	// Search backwards for the first non-word character.
+	while (point.column > 0) {
+		line->get_character(point.column, c);
+		if (!is_word_char(c)) {
+			point.column += 1;
+			return point;
+			}
+		point.column -= 1;
+		}
+	return point;
+}
+
+
+TermWindow::SelectionPoint TermWindow::end_of_word(SelectionPoint point)
+{
+	// Search forward for the first non-word character.
+	Line* line = history->line(point.line);
+	int line_num_characters = line->num_characters();
+	while (point.column < line_num_characters) {
+		char c[16];
+		line->get_character(point.column, c);
+		if (!is_word_char(c))
+			return point;
+		point.column += 1;
+		}
+	return point;
 }
 
 

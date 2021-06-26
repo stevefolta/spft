@@ -18,6 +18,7 @@ class Line {
 			return runs.empty();
 			}
 		int	num_characters();
+		void	get_character(int column, char* char_out);
 
 		// As an collection, it gives the runs.
 		std::list<Run*>::iterator	begin() { return runs.begin(); }

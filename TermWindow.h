@@ -6,6 +6,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
+#include <time.h>
 #include <stdint.h>
 
 class Terminal;
@@ -62,6 +63,11 @@ class TermWindow {
 			NotSelecting, SelectingForward, SelectingBackward,
 			};
 		int	selecting_state;
+		enum {
+			SelectingByChar, SelectingByWord, SelectingByLine,
+			};
+		int	selecting_by;
+		struct timespec	last_click_time;
 
 		Atom wm_delete_window_atom;
 		Atom wm_name_atom;
@@ -76,6 +82,8 @@ class TermWindow {
 
 		int	column_for_pixel(int64_t which_line, int x);
 		int64_t	calc_effective_top_line();
+		SelectionPoint	start_of_word(SelectionPoint point);
+		SelectionPoint	end_of_word(SelectionPoint point);
 	};
 
 

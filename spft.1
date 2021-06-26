@@ -49,6 +49,16 @@ This affects how many columns programs think they have available.  If this is
 too large, you'll have a lot of unused space on the right side of the window.
 If it's too small, you can have characters (and even the cursor) running off
 the right edge of the screen where you can't see them.
+.TP
+.B double_click_ms
+The maximum time, in milliseconds, for two clicks to be considered a double- or
+triple-click.
+.TP
+.B word_separator_characters, additional_word_separator_characters
+When double-clicking to select word-by-word, these are the characters that
+considered not to be part of a word.  You can entirely replace the defaults by
+setting \(lqword_separator_characters\(rq, or add to them by setting
+\(lqadditional_word_separator_characters\(rq.
 
 .SH SEE ALSO
 .BR st (1),

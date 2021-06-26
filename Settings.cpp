@@ -15,6 +15,9 @@ Settings settings = {
 	0,
 	15,
 	0.6,
+	300,
+	" \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
+	""
 	};
 
 
@@ -87,6 +90,12 @@ void SettingsParser::parse()
 					settings.default_background_color = parse_uint32(value_token);
 				else if (setting_name == "estimated_column_width")
 					settings.estimated_column_width = parse_float(value_token);
+				else if (setting_name == "double_click_ms")
+					settings.double_click_ms = parse_uint32(value_token);
+				else if (setting_name == "word_separator_characters")
+					settings.word_separator_characters = unquote_string(value_token);
+				else if (setting_name == "additional_word_separator_characters")
+					settings.additional_word_separator_characters = unquote_string(value_token);
 				else
 					fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
 				}

@@ -12,6 +12,9 @@ struct Settings {
 	float	estimated_column_width;
 		// A guess at the average character width, as a fraction of the width of
 		// a capital "M".
+	uint32_t double_click_ms;
+	std::string word_separator_characters;
+	std::string additional_word_separator_characters;
 
 	void	read_settings_files();
 	void	read_settings_file(std::string path);

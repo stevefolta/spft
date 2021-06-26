@@ -128,6 +128,28 @@ int Line::num_characters()
 }
 
 
+void Line::get_character(int column, char* char_out)
+{
+	for (auto& run: runs) {
+		const char* p = run->bytes();
+		if (p == nullptr)
+			continue;
+		const char* end = p + strlen(p);
+		while (p < end) {
+			int char_length = UTF8::bytes_for_n_characters(p, end - p, 1);
+			if (column == 0) {
+				memcpy(char_out, p, char_length);
+				char_out[char_length] = 0;
+				return;
+				}
+			column -= 1;
+			p += char_length;
+			}
+		}
+	*char_out = 0;
+}
+
+
 void Line::clear_to_end_from(int column)
 {
 	// Shorten the run containing the column, and delete all runs after it.
