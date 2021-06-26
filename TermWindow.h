@@ -41,14 +41,24 @@ class TermWindow {
 		int64_t first_selected_line, last_selected_line;
 		int first_selected_column, selection_end_column;
 		bool has_selection() { return first_selected_line >= 0; }
+		enum {
+			NotSelecting, SelectingForward, SelectingBackward,
+			};
+		int	selecting_state;
 
 		Atom wm_delete_window_atom;
 		Atom wm_name_atom;
 
 		void	screen_size_changed();
 		void	key_down(XKeyEvent* event);
+		void	mouse_button_down(XButtonEvent* event);
+		void	mouse_moved(XMotionEvent* event);
+		void	mouse_button_up(XButtonEvent* event);
 		int	displayed_lines() { return height / xft_font->height; }
 		void	scroll_to_bottom() { top_line = -1; }
+
+		int	column_for_pixel(int64_t which_line, int x);
+		int64_t	calc_effective_top_line();
 	};
 
 

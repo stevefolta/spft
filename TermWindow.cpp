@@ -17,6 +17,7 @@ TermWindow::TermWindow()
 	top_line = -1;
 	first_selected_line = last_selected_line = -1;
 	first_selected_column = selection_end_column = 0;
+	selecting_state = NotSelecting;
 	closed = false;
 
 	history = new History();
@@ -161,6 +162,15 @@ void TermWindow::tick()
 			case KeyPress:
 				key_down(&event.xkey);
 				break;
+			case ButtonPress:
+				mouse_button_down(&event.xbutton);
+				break;
+			case MotionNotify:
+				mouse_moved(&event.xmotion);
+				break;
+			case ButtonRelease:
+				mouse_button_up(&event.xbutton);
+				break;
 			}
 		}
 }
@@ -175,13 +185,7 @@ void TermWindow::draw()
 
 	// Draw the lines.
 	int64_t num_lines = displayed_lines();
-	int64_t effective_top_line = top_line;
-	if (effective_top_line < 0) {
-		// Negative "top_line" means "bottom".
-		effective_top_line = history->get_last_line() - num_lines + 1;
-		}
-	if (effective_top_line < history->get_first_line())
-		effective_top_line = history->get_first_line();
+	int64_t effective_top_line = calc_effective_top_line();
 	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
@@ -525,6 +529,135 @@ void TermWindow::key_down(XKeyEvent* event)
 		terminal->send(buffer, length);
 		scroll_to_bottom();
 		}
+}
+
+
+void TermWindow::mouse_button_down(XButtonEvent* event)
+{
+	if (event->button == Button1) {
+		//*** TODO: handle double and triple clicks.
+
+		// Which line is it on?
+		int64_t num_lines = displayed_lines();
+		int64_t effective_top_line = calc_effective_top_line();
+		int64_t last_line = effective_top_line + num_lines - 1;
+		if (last_line > history->get_last_line())
+			last_line = history->get_last_line();
+		first_selected_line = effective_top_line + event->y / xft_font->height;
+		if (first_selected_line < effective_top_line)
+			first_selected_line = effective_top_line;
+		else if (first_selected_line > last_line)
+			first_selected_line = last_line;
+
+		// Which column?
+		first_selected_column = column_for_pixel(first_selected_line, event->x);
+
+		last_selected_line = first_selected_line;
+		selection_end_column = first_selected_column + 1;
+		selecting_state = SelectingForward;
+		draw();
+		}
+
+	else if (event->button == Button3) {
+		//*** TODO: Paste.
+		}
+}
+
+
+void TermWindow::mouse_moved(XMotionEvent* event)
+{
+	if (selecting_state == NotSelecting)
+		return;
+
+	//*** TODO: Handle by-word and by-line selection.
+
+	int64_t selection_start_line =
+		(selecting_state == SelectingBackward ?
+		 last_selected_line : first_selected_line);
+	int selection_start_column =
+		(selecting_state == SelectingBackward ?
+		 selection_end_column : first_selected_column);
+
+	// Which line are we on?
+	int64_t num_lines = displayed_lines();
+	int64_t effective_top_line = calc_effective_top_line();
+	int64_t last_line = effective_top_line + num_lines - 1;
+	if (last_line > history->get_last_line())
+		last_line = history->get_last_line();
+	int64_t selection_end_line = effective_top_line + event->y / xft_font->height;
+	if (selection_end_line < effective_top_line)
+		selection_end_line = effective_top_line;
+	else if (selection_end_line > last_line)
+		selection_end_line = last_line;
+
+	// Which column?
+	int cur_selection_end_column = column_for_pixel(first_selected_line, event->x);
+
+	// Set the selection.
+	bool selecting_forward =
+		selection_end_line > selection_start_line ||
+		(selection_end_line == selection_start_line &&
+		 cur_selection_end_column >= selection_start_column);
+	if (selecting_forward) {
+		first_selected_line = selection_start_line;
+		first_selected_column = selection_start_column;
+		last_selected_line = selection_end_line;
+		selection_end_column = cur_selection_end_column;
+		selecting_state = SelectingForward;
+		}
+	else {
+		first_selected_line = selection_end_line;
+		first_selected_column = cur_selection_end_column;
+		last_selected_line = selection_start_line;
+		selection_end_column = selection_start_column;
+		selecting_state = SelectingBackward;
+		}
+
+	draw();
+}
+
+
+void TermWindow::mouse_button_up(XButtonEvent* event)
+{
+	if (event->button == Button1)
+		selecting_state = NotSelecting;
+}
+
+
+int TermWindow::column_for_pixel(int64_t which_line, int x)
+{
+	Line* line = history->line(which_line);
+	int column = 0;
+	for (auto run: *line) {
+		const char* p = run->bytes();
+		const char* end = p + strlen(p);
+		while (p < end) {
+			int char_num_bytes = UTF8::bytes_for_n_characters(p, end - p, 1);
+			XGlyphInfo glyph_info;
+			XftTextExtentsUtf8(
+				display, xft_font,
+				(const FcChar8*) p, char_num_bytes, &glyph_info);
+			if (x < glyph_info.xOff / 2)
+				return column;
+			x -= glyph_info.xOff;
+			column += 1;
+			p += char_num_bytes;
+			}
+		}
+	return column;
+}
+
+
+int64_t TermWindow::calc_effective_top_line()
+{
+	int64_t effective_top_line = top_line;
+	if (effective_top_line < 0) {
+		// Negative "top_line" means "bottom".
+		effective_top_line = history->get_last_line() - displayed_lines() + 1;
+		}
+	if (effective_top_line < history->get_first_line())
+		effective_top_line = history->get_first_line();
+	return effective_top_line;
 }
 
 
