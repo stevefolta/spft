@@ -33,6 +33,7 @@ class History {
 		int	get_current_column() { return current_column; }
 		bool	is_in_alternate_screen() { return alternate_screen_top_line >= 0; }
 		bool	cursor_enabled;
+		bool	use_bracketed_paste;
 
 	private:
 		Style	current_style;

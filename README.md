@@ -25,10 +25,10 @@ mlterm as your daily driver.
 What it still needs
 -----
 
-- Pasting.
 - Bold and italic.
 - Tabs.  Elastic tabs.
 - Many more escape sequences.
 - More testing of character insertion and deletion scenarios.
+- Handle requests for big selections correctly.
 
 

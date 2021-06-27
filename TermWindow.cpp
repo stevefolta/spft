@@ -178,6 +178,12 @@ void TermWindow::tick()
 			case SelectionRequest:
 				selection_requested(&event.xselectionrequest);
 				break;
+			case PropertyNotify:
+				property_changed(&event);
+				break;
+			case SelectionNotify:
+				received_selection(&event);
+				break;
 			}
 		}
 }
@@ -577,8 +583,8 @@ void TermWindow::mouse_button_down(XButtonEvent* event)
 		draw();
 		}
 
-	else if (event->button == Button3) {
-		//*** TODO: Paste.
+	else if (event->button == Button2) {
+		paste();
 		}
 }
 
@@ -678,6 +684,10 @@ void TermWindow::mouse_button_up(XButtonEvent* event)
 
 void TermWindow::selection_requested(XSelectionRequestEvent* event)
 {
+	// We send the whole selection at once, even if it's big.  The ICCCM says we
+	// should use the "large data transfer" protocol if the selection is larger
+	// than XMaxRequestSize(display), but we don't do that yet.
+
 	XSelectionEvent response;
 	response.type = SelectionNotify;
 	response.requestor = event->requestor;
@@ -719,6 +729,95 @@ void TermWindow::selection_requested(XSelectionRequestEvent* event)
 		XSendEvent(event->display, event->requestor, true, 0, (XEvent*) &response);
 	if (!result)
 		fprintf(stderr, "Error sending SelectionNotify event.\n");
+}
+
+
+void TermWindow::property_changed(XEvent* event)
+{
+	if (event->xproperty.state == PropertyNewValue && event->xproperty.atom == XA_PRIMARY) {
+		// This is a continuation of a selection transfer.
+		received_selection(event);
+		}
+}
+
+
+void TermWindow::received_selection(XEvent* event)
+{
+	Atom property = None;
+	if (event->type == SelectionNotify)
+		property = event->xselection.property;
+	else if (event->type == PropertyNotify)
+		property = event->xproperty.atom;
+	if (property == None)
+		return;
+
+	Atom incr_atom = XInternAtom(display, "INCR", 0);
+
+	long offset = 0;
+	unsigned long bytes_left = 0;
+	do {
+		// Get the next chunk of data.
+		Atom type;
+		int format;
+		unsigned long num_items = 0;
+		unsigned char* data;
+		int result =
+			XGetWindowProperty(
+				display, window, property, offset, BUFSIZ / 4, False,
+				AnyPropertyType,
+				&type, &format, &num_items, &bytes_left, &data);
+		if (result != Success) {
+			fprintf(stderr, "Receiving clipboard data failed.\n");
+			return;
+			}
+
+		if (event->type == PropertyNotify && num_items == 0 && bytes_left == 0) {
+			// This is the signal that all data has been transferred.  We no
+			// longer need to receive PropertyNotify events.
+			attributes.event_mask &= ~PropertyChangeMask;
+			XChangeWindowAttributes(display, window, CWEventMask, &attributes);
+			}
+
+		if (type == incr_atom) {
+			// Multi-part transfer.
+			// We need get the rest of the parts via PropertyNotify events.
+			attributes.event_mask |= PropertyChangeMask;
+			XChangeWindowAttributes(display, window, CWEventMask, &attributes);
+			// Signal transfer start by deleting the property.
+			XDeleteProperty(display, window, property);
+			}
+
+		// Convert '\n' to '\r'.
+		unsigned long num_bytes = num_items * format / 8;
+		unsigned char* p = data;
+		unsigned char* end = data + num_bytes;
+		for (; p < end; ++p) {
+			if (*p == '\n')
+				*p = '\r';
+			}
+
+		// Send to the client.
+		if (history->use_bracketed_paste)
+			terminal->send("\x1B[200~");
+		terminal->send((const char*) data, num_bytes);
+		if (history->use_bracketed_paste)
+			terminal->send("\x1B[201~");
+
+		XFree(data);
+		// Offset is in 32-bit quantities, not bytes.
+		offset += num_items * format / 32;
+	} while (bytes_left > 0);
+
+	// Delete the property to let the selection owner know we're ready for the
+	// next chunk.
+	XDeleteProperty(display, window, property);
+}
+
+
+void TermWindow::paste()
+{
+	XConvertSelection(
+		display, XA_PRIMARY, target_atom, XA_PRIMARY, window, CurrentTime);
 }
 
 

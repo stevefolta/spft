@@ -81,8 +81,12 @@ class TermWindow {
 		void	mouse_moved(XMotionEvent* event);
 		void	mouse_button_up(XButtonEvent* event);
 		void	selection_requested(XSelectionRequestEvent* event);
+		void	property_changed(XEvent* event);
+		void	received_selection(XEvent* event);
 		int	displayed_lines() { return height / xft_font->height; }
 		void	scroll_to_bottom() { top_line = -1; }
+
+		void	paste();
 
 		int	column_for_pixel(int64_t which_line, int x);
 		int64_t	calc_effective_top_line();

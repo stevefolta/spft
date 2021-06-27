@@ -9,7 +9,7 @@
 
 
 History::History()
-	: cursor_enabled(true), terminal(nullptr)
+	: cursor_enabled(true), use_bracketed_paste(false), terminal(nullptr)
 {
 	at_end_of_line = true;
 	capacity = 10000;
@@ -621,6 +621,10 @@ bool History::set_private_mode(int mode, bool set)
 				enter_alternate_screen();
 			else
 				exit_alternate_screen();
+			break;
+
+		case 2004:
+			use_bracketed_paste = set;
 			break;
 
 		default:
