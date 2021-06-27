@@ -6,6 +6,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
+#include <string>
 #include <time.h>
 #include <stdint.h>
 
@@ -68,15 +69,18 @@ class TermWindow {
 			};
 		int	selecting_by;
 		struct timespec	last_click_time;
+		std::string selected_text;
 
 		Atom wm_delete_window_atom;
 		Atom wm_name_atom;
+		Atom target_atom;
 
 		void	screen_size_changed();
 		void	key_down(XKeyEvent* event);
 		void	mouse_button_down(XButtonEvent* event);
 		void	mouse_moved(XMotionEvent* event);
 		void	mouse_button_up(XButtonEvent* event);
+		void	selection_requested(XSelectionRequestEvent* event);
 		int	displayed_lines() { return height / xft_font->height; }
 		void	scroll_to_bottom() { top_line = -1; }
 

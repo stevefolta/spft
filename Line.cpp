@@ -1,6 +1,7 @@
 #include "Line.h"
 #include "Run.h"
 #include "UTF8.h"
+#include <sstream>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -147,6 +148,35 @@ void Line::get_character(int column, char* char_out)
 			}
 		}
 	*char_out = 0;
+}
+
+
+std::string Line::characters_from_to(int start_column, int end_column)
+{
+	std::stringstream result;
+	for (auto& run: runs) {
+		if (end_column <= 0)
+			break;
+		if (start_column < 0)
+			start_column = 0;
+		int run_num_chars = run->num_characters();
+		if (start_column < run_num_chars) {
+			const char* run_bytes = run->bytes();
+			int run_num_bytes = strlen(run_bytes);
+			const char* start =
+				run_bytes +
+				UTF8::bytes_for_n_characters(
+					run_bytes, run_num_bytes, start_column);
+			const char* end =
+				run_bytes +
+				UTF8::bytes_for_n_characters(
+					run_bytes, run_num_bytes, end_column);
+			result << std::string(start, end);
+			}
+		start_column -= run_num_chars;
+		end_column -= run_num_chars;
+		}
+	return result.str();
 }
 
 

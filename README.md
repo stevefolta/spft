@@ -25,7 +25,6 @@ mlterm as your daily driver.
 What it still needs
 -----
 
-- Selection.
 - Pasting.
 - Bold and italic.
 - Tabs.  Elastic tabs.

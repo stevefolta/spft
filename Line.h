@@ -3,6 +3,7 @@
 
 #include "Style.h"
 #include <list>
+#include <string>
 
 class Run;
 
@@ -19,6 +20,7 @@ class Line {
 			}
 		int	num_characters();
 		void	get_character(int column, char* char_out);
+		std::string	characters_from_to(int start_column, int end_column);
 
 		// As an collection, it gives the runs.
 		std::list<Run*>::iterator	begin() { return runs.begin(); }

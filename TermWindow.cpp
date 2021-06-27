@@ -7,6 +7,8 @@
 #include "Settings.h"
 #include "UTF8.h"
 #include <X11/cursorfont.h>
+#include <X11/Xatom.h>
+#include <sstream>
 #include <stdexcept>
 #include <string.h>
 
@@ -72,6 +74,9 @@ TermWindow::TermWindow()
 	// Window manager.
 	wm_delete_window_atom = XInternAtom(display, "WM_DELETE_WINDOW", False);
 	wm_name_atom = XInternAtom(display, "_NET_WM_NAME", False);
+	target_atom = XInternAtom(display, "UTF8_STRING", 0);
+	if (target_atom == None)
+		target_atom = XA_STRING;
 	XSetWMProtocols(display, window, &wm_delete_window_atom, 1);
 	set_title("spft");
 
@@ -169,6 +174,9 @@ void TermWindow::tick()
 				break;
 			case ButtonRelease:
 				mouse_button_up(&event.xbutton);
+				break;
+			case SelectionRequest:
+				selection_requested(&event.xselectionrequest);
 				break;
 			}
 		}
@@ -642,8 +650,75 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 
 void TermWindow::mouse_button_up(XButtonEvent* event)
 {
-	if (event->button == Button1)
+	if (event->button == Button1) {
 		selecting_state = NotSelecting;
+
+		// Build the selected text.
+		std::stringstream text;
+		for (int which_line = selection_start.line; which_line <= selection_end.line; ++which_line) {
+			Line* line = history->line(which_line);
+			if (line == nullptr)
+				continue;
+			text <<
+				line->characters_from_to(
+					which_line == selection_start.line ? selection_start.column : 0,
+					which_line == selection_end.line ? selection_end.column : INT_MAX);
+			if (which_line != selection_end.line || selecting_by == SelectingByLine)
+				text << '\n';
+			}
+		selected_text = text.str();
+
+		// Tell X we've got the selection.
+		XSetSelectionOwner(display, XA_PRIMARY, window, event->time);
+		if (XGetSelectionOwner(display, XA_PRIMARY) != window)
+			selection_start.line = -1;
+		}
+}
+
+
+void TermWindow::selection_requested(XSelectionRequestEvent* event)
+{
+	XSelectionEvent response;
+	response.type = SelectionNotify;
+	response.requestor = event->requestor;
+	response.selection = event->selection;
+	response.target = event->target;
+	response.time = event->time;
+	response.property = None; 	// Default: reject.
+
+	Atom targets_atom = XInternAtom(display, "TARGETS", 0);
+	if (event->target == targets_atom) {
+		// Respond with the supported type.
+		XChangeProperty(
+			event->display, event->requestor, event->requestor,
+			XA_ATOM, 32, PropModeReplace,
+			(unsigned char*) &target_atom, 1);
+		response.property = event->property;
+		}
+	else if (event->target == target_atom || event->target == XA_STRING) {
+		if (event->selection == XA_PRIMARY) {
+			if (!selected_text.empty()) {
+				Atom property = event->property;
+				if (property == None)
+					property = event->target;
+				XChangeProperty(
+					event->display, event->requestor, property, event->target,
+					8, PropModeReplace,
+					(unsigned char*) selected_text.data(), selected_text.size());
+				response.property = event->property;
+				}
+			}
+		else {
+			// We don't currently handle other types of selection.
+			return;
+			}
+		}
+
+	// Send the reply.
+	int result =
+		XSendEvent(event->display, event->requestor, true, 0, (XEvent*) &response);
+	if (!result)
+		fprintf(stderr, "Error sending SelectionNotify event.\n");
 }
 
 
