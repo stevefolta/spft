@@ -580,6 +580,20 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 	if (selecting_state == NotSelecting)
 		return;
 
+	// Autoscroll.
+	if (event->y < 0) {
+		top_line = calc_effective_top_line() - 1;
+		if (top_line < history->get_first_line())
+			top_line = history->get_first_line();
+		}
+	else if (event->y > displayed_lines() * xft_font->height) {
+		int new_top_line = calc_effective_top_line() + 1;
+		if (new_top_line + displayed_lines() >= history->get_last_line())
+			scroll_to_bottom();
+		else
+			top_line = new_top_line;
+		}
+
 	SelectionPoint cur_selection_start;
 	if (selecting_state == SelectingBackward)
 		cur_selection_start = selection_end;
