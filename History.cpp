@@ -446,6 +446,11 @@ const char* History::parse_csi(const char* p, const char* end)
 						// Set foreground color.
 						current_style.foreground_color = args.args[which_arg] - 30;
 						break;
+					case 90: case 91: case 92: case 93:
+					case 94: case 95: case 96: case 97:
+						// Set high-intensity foreground color.
+						current_style.foreground_color = args.args[which_arg] - 90 + 8;
+						break;
 					case 38:
 						// Set foreground color.
 						which_arg += 1;
@@ -466,6 +471,11 @@ const char* History::parse_csi(const char* p, const char* end)
 					case 44: case 45: case 46: case 47:
 						// Set background color.
 						current_style.background_color = args.args[which_arg] - 40;
+						break;
+					case 100: case 101: case 102: case 103:
+					case 104: case 105: case 106: case 107:
+						// Set high-intensity background color.
+						current_style.background_color = args.args[which_arg] - 100 + 8;
 						break;
 					case 48:
 						// Set background color.
