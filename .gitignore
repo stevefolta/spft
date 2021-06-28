@@ -3,4 +3,5 @@ objects
 Makefile.local
 tags
 *.log
+logs
 
