@@ -17,7 +17,8 @@ Settings settings = {
 	0.6,
 	300,
 	" \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
-	""
+	"",
+	"spft",
 	};
 
 
@@ -96,6 +97,8 @@ void SettingsParser::parse()
 					settings.word_separator_characters = unquote_string(value_token);
 				else if (setting_name == "additional_word_separator_characters")
 					settings.additional_word_separator_characters = unquote_string(value_token);
+				else if (setting_name == "window_title")
+					settings.window_title = unquote_string(value_token);
 				else
 					fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
 				}

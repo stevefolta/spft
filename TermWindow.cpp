@@ -78,7 +78,7 @@ TermWindow::TermWindow()
 	if (target_atom == None)
 		target_atom = XA_STRING;
 	XSetWMProtocols(display, window, &wm_delete_window_atom, 1);
-	set_title("spft");
+	set_title(settings.window_title.c_str());
 
 	XMapWindow(display, window);
 	XSync(display, False);

@@ -15,6 +15,7 @@ struct Settings {
 	uint32_t double_click_ms;
 	std::string word_separator_characters;
 	std::string additional_word_separator_characters;
+	std::string window_title;
 
 	void	read_settings_files();
 	void	read_settings_file(std::string path);

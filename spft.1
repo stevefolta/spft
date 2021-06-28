@@ -4,6 +4,11 @@ spft - simple proportional-font terminal
 
 .SH SYNOPSIS
 .B spft
+.RB [ \-t
+.IR title
+|
+.B title:
+.IR title ]
 
 .SH DESCRIPTION
 .B spft
@@ -59,6 +64,9 @@ When double-clicking to select word-by-word, these are the characters that
 considered not to be part of a word.  You can entirely replace the defaults by
 setting \(lqword_separator_characters\(rq, or add to them by setting
 \(lqadditional_word_separator_characters\(rq.
+.TP
+.B window_title
+The title of the window.
 
 .SH SEE ALSO
 .BR st (1),
