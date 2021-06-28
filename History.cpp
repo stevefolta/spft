@@ -8,8 +8,10 @@
 #endif
 
 
-History::History()
-	: cursor_enabled(true), use_bracketed_paste(false), terminal(nullptr)
+History::History() :
+	cursor_enabled(true), use_bracketed_paste(false),
+	application_cursor_keys(false),
+	terminal(nullptr)
 {
 	at_end_of_line = true;
 	capacity = 10000;
@@ -621,6 +623,11 @@ const char* History::parse_st_string(const char* p, const char* end, bool can_en
 bool History::set_private_mode(int mode, bool set)
 {
 	switch (mode) {
+		case 1:
+			// DECCKM.
+			application_cursor_keys = set;
+			break;
+
 		case 25:
 			cursor_enabled = set;
 			break;

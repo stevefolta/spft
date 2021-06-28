@@ -478,21 +478,13 @@ void TermWindow::key_down(XKeyEvent* event)
 		}
 
 	// Special keys that XLookupString() doesn't handle.
-	struct KeyMapping {
-		KeySym	keySym;
-		unsigned int	mask;
-		const char*	str;
-		};
-	enum {
-		AnyModKey = UINT_MAX,
-		};
-	KeyMapping keyMappings[] = {
+	static const KeyMapping key_mappings[] = {
 		{ XK_Up, AnyModKey, "\x1B[A" },
 		{ XK_Down, AnyModKey, "\x1B[B" },
 		{ XK_Left, AnyModKey, "\x1B[D" },
 		{ XK_Right, AnyModKey, "\x1B[C" },
-		{ XK_Home, AnyModKey, "\x1B[1~" },
-		{ XK_End, AnyModKey, "\x1B[4~" },
+		{ XK_Home, AnyModKey, "\x1B[H" },
+		{ XK_End, AnyModKey, "\x1B[F" },
 		{ XK_Prior, 0, "\x1B[5~" }, 	// Page up.
 		{ XK_Next, 0, "\x1B[6~" }, 	// Page down.
 		{ XK_Insert, AnyModKey, "\x1B[2~" },
@@ -511,16 +503,26 @@ void TermWindow::key_down(XKeyEvent* event)
 		{ XK_F11, AnyModKey, "\x1B[23~" },
 		{ XK_F12, AnyModKey, "\x1B[24~" },
 		};
-	const KeyMapping* mappingsEnd = &keyMappings[sizeof(keyMappings) / sizeof(keyMappings[0])];
-	for (KeyMapping* mapping = keyMappings; mapping < mappingsEnd; ++mapping) {
-		bool matches =
-			keySym == mapping->keySym &&
-			(mapping->mask == AnyModKey || mapping->mask == (event->state & ~Mod2Mask));
-		if (matches) {
-			terminal->send(mapping->str);
-			scroll_to_bottom();
-			}
+	static const KeyMapping application_cursor_key_mappings[] = {
+		{ XK_Up, AnyModKey, "\x1BOA" },
+		{ XK_Down, AnyModKey, "\x1BOB" },
+		{ XK_Left, AnyModKey, "\x1BOD" },
+		{ XK_Right, AnyModKey, "\x1BOC" },
+		{ XK_Home, AnyModKey, "\x1BOH" },
+		{ XK_End, AnyModKey, "\x1BOF" },
+		};
+	#define ARRAY_SIZE(array)	(sizeof(array) / sizeof(array[0]))
+	if (history->application_cursor_keys) {
+		bool handled =
+			check_special_key(
+				keySym, event->state,
+				application_cursor_key_mappings,
+				ARRAY_SIZE(application_cursor_key_mappings));
+		if (handled)
+			return;
 		}
+	if (check_special_key(keySym, event->state, key_mappings, ARRAY_SIZE(key_mappings)))
+		return;
 
 	// The normal case is just to send what XLookupString() gave us.
 	if (length > 0) {
@@ -533,6 +535,26 @@ void TermWindow::key_down(XKeyEvent* event)
 		terminal->send(buffer, length);
 		scroll_to_bottom();
 		}
+}
+
+
+bool TermWindow::check_special_key(
+	KeySym key_sym, unsigned int state,
+	const KeyMapping* key_mappings, int num_key_mappings)
+{
+	const KeyMapping* mappings_end = &key_mappings[num_key_mappings];
+	for (const KeyMapping* mapping = key_mappings; mapping < mappings_end; ++mapping) {
+		bool matches =
+			key_sym == mapping->keySym &&
+			(mapping->mask == AnyModKey || mapping->mask == (state & ~Mod2Mask));
+		if (matches) {
+			terminal->send(mapping->str);
+			scroll_to_bottom();
+			return true;
+			}
+		}
+
+	return false;
 }
 
 

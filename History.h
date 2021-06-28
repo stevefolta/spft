@@ -34,6 +34,7 @@ class History {
 		bool	is_in_alternate_screen() { return alternate_screen_top_line >= 0; }
 		bool	cursor_enabled;
 		bool	use_bracketed_paste;
+		bool	application_cursor_keys;
 
 	private:
 		Style	current_style;

@@ -75,6 +75,18 @@ class TermWindow {
 		Atom wm_name_atom;
 		Atom target_atom;
 
+		struct KeyMapping {
+			KeySym	keySym;
+			unsigned int	mask;
+			const char*	str;
+			};
+		enum {
+			AnyModKey = UINT_MAX,
+			};
+		bool	check_special_key(
+			KeySym key_sym, unsigned int state,
+			const KeyMapping* key_mappings, int num_key_mappings);
+
 		void	screen_size_changed();
 		void	key_down(XKeyEvent* event);
 		void	mouse_button_down(XButtonEvent* event);
