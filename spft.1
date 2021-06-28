@@ -51,10 +51,10 @@ in the form 0x80rrggbb.
 .B term_name
 A string that becomes the $TERM.  Defaults to \(lqxterm\(rq.
 .TP
-.B estimated_column_width
+.B average_character_width
 A floating-point number representing an estimate of the width of the average
-character used in the font, as a percentage of the width of the capital
-\(lqM\(rq.
+character used in the font, as a fraction of the width of the capital
+\(lqM\(rq.  So it should usually be between 0.0 and 1.0.
 This affects how many columns programs think they have available.  If this is
 too large, you'll have a lot of unused space on the right side of the window.
 If it's too small, you can have characters (and even the cursor) running off

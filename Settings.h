@@ -9,7 +9,7 @@ struct Settings {
 	std::string	term_name;
 	uint32_t	default_foreground_color;
 	uint32_t	default_background_color;
-	float	estimated_column_width;
+	float	average_character_width;
 		// A guess at the average character width, as a fraction of the width of
 		// a capital "M".
 	uint32_t double_click_ms;

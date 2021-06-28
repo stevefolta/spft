@@ -420,7 +420,7 @@ void TermWindow::screen_size_changed()
 		(const FcChar8*) "M", 1,
 		&glyph_info);
 	terminal->notify_resize(
-		width / (glyph_info.xOff * settings.estimated_column_width),
+		width / (glyph_info.xOff * settings.average_character_width),
 		lines_on_screen,
 		width, height);
 }

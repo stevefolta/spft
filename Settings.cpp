@@ -14,7 +14,7 @@ Settings settings = {
 	.term_name = "xterm",
 	.default_foreground_color = 0,
 	.default_background_color = 15,
-	.estimated_column_width = 0.6,
+	.average_character_width = 0.6,
 	.double_click_ms = 300,
 	.word_separator_characters = " \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
 	.additional_word_separator_characters = "",
@@ -89,8 +89,8 @@ void SettingsParser::parse()
 					settings.default_foreground_color = parse_uint32(value_token);
 				else if (setting_name == "default_background_color")
 					settings.default_background_color = parse_uint32(value_token);
-				else if (setting_name == "estimated_column_width")
-					settings.estimated_column_width = parse_float(value_token);
+				else if (setting_name == "average_character_width")
+					settings.average_character_width = parse_float(value_token);
 				else if (setting_name == "double_click_ms")
 					settings.double_click_ms = parse_uint32(value_token);
 				else if (setting_name == "word_separator_characters")
