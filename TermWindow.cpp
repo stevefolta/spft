@@ -497,6 +497,7 @@ void TermWindow::key_down(XKeyEvent* event)
 		{ XK_Next, 0, "\x1B[6~" }, 	// Page down.
 		{ XK_Insert, AnyModKey, "\x1B[2~" },
 		{ XK_Delete, AnyModKey, "\x1B[3~" },
+		{ XK_ISO_Left_Tab, ShiftMask, "\x1B[Z" },
 		{ XK_F1, AnyModKey, "\x1BOP" },
 		{ XK_F2, AnyModKey, "\x1BOQ" },
 		{ XK_F3, AnyModKey, "\x1BOR" },
