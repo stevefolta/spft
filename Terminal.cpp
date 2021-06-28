@@ -167,6 +167,14 @@ void Terminal::exec_shell()
 	signal(SIGTERM, SIG_DFL);
 	signal(SIGALRM, SIG_DFL);
 
+	// Working directory.
+	if (!settings.working_directory.empty()) {
+		std::string path = settings.working_directory;
+		if (path[0] == '~')
+			path = settings.home_path() + path.substr(1);
+		chdir(path.c_str());
+		}
+
 	// Start the shell.
 	char* args[] = { (char*) shell_path, 0 };
 	execvp(shell_path, args);

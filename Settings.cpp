@@ -10,15 +10,15 @@
 
 
 Settings settings = {
-	"Helvetica Neue,sans\\-serif-17:style=Light",
-	"xterm",
-	0,
-	15,
-	0.6,
-	300,
-	" \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
-	"",
-	"spft",
+	.font_spec = "Helvetica Neue,sans\\-serif-17:style=Light",
+	.term_name = "xterm",
+	.default_foreground_color = 0,
+	.default_background_color = 15,
+	.estimated_column_width = 0.6,
+	.double_click_ms = 300,
+	.word_separator_characters = " \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
+	.additional_word_separator_characters = "",
+	.window_title = "spft",
 	};
 
 
@@ -258,16 +258,9 @@ void Settings::read_settings_files()
 		config_dir = env_dir;
 	else {
 		// Default to ~/.config.
-		const char* home_dir = getenv("HOME");
-		if (home_dir == nullptr) {
-			const struct passwd* user_info = getpwuid(getuid());
-			if (user_info && user_info->pw_dir[0])
-				home_dir = user_info->pw_dir;
-			}
-		if (home_dir) {
-			config_dir = home_dir;
-			config_dir += "/.config";
-			}
+		std::string home_dir = home_path();
+		if (!home_dir.empty())
+			config_dir = home_dir + "/.config";
 		}
 	if (!config_dir.empty())
 		read_settings_file(config_dir + "/spft/settings");
@@ -287,6 +280,20 @@ void Settings::read_settings_file(std::string path)
 		std::istreambuf_iterator<char>());
 	SettingsParser parser(contents.data(), contents.size());
 	parser.parse();
+}
+
+
+std::string Settings::home_path()
+{
+	const char* home_dir = getenv("HOME");
+	if (home_dir == nullptr) {
+		const struct passwd* user_info = getpwuid(getuid());
+		if (user_info && user_info->pw_dir[0])
+			home_dir = user_info->pw_dir;
+		}
+	if (home_dir == nullptr)
+		return "";
+	return home_dir;
 }
 
 

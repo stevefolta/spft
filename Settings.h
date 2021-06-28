@@ -16,9 +16,11 @@ struct Settings {
 	std::string word_separator_characters;
 	std::string additional_word_separator_characters;
 	std::string window_title;
+	std::string working_directory;
 
 	void	read_settings_files();
 	void	read_settings_file(std::string path);
+	std::string	home_path();
 	};
 extern Settings settings;
 
