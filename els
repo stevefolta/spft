@@ -3,7 +3,7 @@
 # This is a wrapper around "ls" that results in tabbed output that's suitable
 # for elastic tabs.
 
-import subprocess, sys, os, re
+import subprocess, sys, os, re, shutil
 
 def display_length(string):
 	num_displayed_chars = 0
@@ -32,9 +32,7 @@ class ColumnInfo:
 
 def columnate(filenames):
 	# Set up for columnation.
-	line_length = 80
-	if "COLUMNS" in os.environ:
-		line_length = int(os.environ["COLUMNS"])
+	line_length = shutil.get_terminal_size().columns
 	max_possible_columns = int(line_length / min_column_width)
 	if (line_length % min_column_width) != 0:
 		max_possible_columns += 1
