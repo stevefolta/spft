@@ -339,23 +339,29 @@ const char* History::parse_csi(const char* p, const char* end)
 	if (args.private_code_type == 0)
 	switch (c) {
 		case 'A':
-			// Cursor up.
+		case 'F':
+			// Cursor up (CUU) / Cursor Prev Line (CPL).
 			{
 			current_line -= args.args[0] ? args.args[0] : 1;
 			int64_t screen_top_line = calc_screen_top_line();
 			if (current_line < screen_top_line)
 				current_line = screen_top_line;
+			if (c == 'F')
+				current_column = 0;
 			update_at_end_of_line();
 			}
 			break;
 
 		case 'B':
-			// Cursor down.
+		case 'E':
+			// Cursor down (CUD) / Cursor Next Line (CNL).
 			{
 			current_line += args.args[0] ? args.args[0] : 1;
 			int64_t screen_bottom_line = calc_screen_bottom_line();
 			if (current_line > screen_bottom_line)
 				current_line = screen_bottom_line;
+			if (c == 'E')
+				current_column = 0;
 			ensure_current_line();
 			update_at_end_of_line();
 			}
