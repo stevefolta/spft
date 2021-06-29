@@ -158,6 +158,7 @@ void Terminal::exec_shell()
 	setenv("SHELL", shell_path, true);
 	setenv("HOME", user_info->pw_dir, true);
 	setenv("TERM", settings.term_name.c_str(), true);
+	setenv("SPFT", "true", true);
 
 	// Signals.
 	signal(SIGCHLD, SIG_DFL);
