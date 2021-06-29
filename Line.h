@@ -12,8 +12,12 @@ class Line {
 		Line();
 		~Line();
 
+		bool	has_tabs;
+
 		void	append_characters(const char* bytes, int length, Style style);
 		void	replace_characters(int column, const char* bytes, int length, Style style);
+		void	append_tab(Style style);
+		void	replace_character_with_tab(int column, Style style);
 		void	clear();
 		bool	empty()  {
 			return runs.empty();
@@ -34,6 +38,8 @@ class Line {
 
 	protected:
 		std::list<Run*>	runs;
+
+		void	recalc_has_tabs();
 	};
 
 

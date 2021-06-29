@@ -12,6 +12,7 @@ class Run {
 		~Run();
 
 		Style	style;
+		bool	is_tab;
 		const char*	bytes() { return characters; }
 
 		int	num_characters();

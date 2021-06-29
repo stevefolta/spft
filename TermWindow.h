@@ -7,6 +7,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <string>
+#include <vector>
 #include <time.h>
 #include <stdint.h>
 
@@ -104,6 +105,9 @@ class TermWindow {
 		int64_t	calc_effective_top_line();
 		SelectionPoint	start_of_word(SelectionPoint point);
 		SelectionPoint	end_of_word(SelectionPoint point);
+
+		void	build_column_widths(
+			std::vector<int>& column_widths, int64_t first_line, int64_t last_line);
 	};
 
 

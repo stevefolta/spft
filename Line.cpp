@@ -8,6 +8,7 @@
 
 
 Line::Line()
+	: has_tabs(false)
 {
 }
 
@@ -22,7 +23,7 @@ Line::~Line()
 void Line::append_characters(const char* bytes, int length, Style style)
 {
 	Run* last_run = nullptr;
-	if (runs.empty() || runs.back()->style != style) {
+	if (runs.empty() || (runs.back()->style != style || runs.back()->is_tab)) {
 		last_run = new Run(style);
 		runs.push_back(last_run);
 		}
@@ -48,7 +49,7 @@ void Line::replace_characters(int column, const char* bytes, int length, Style s
 	for (auto run = runs.begin(); run != runs.end(); ++run) {
 		int old_run_chars = (*run)->num_characters();
 		if (columns_left < old_run_chars) {
-			if ((*run)->style == style) {
+			if ((*run)->style == style && !(*run)->is_tab) {
 				(*run)->replace_characters(columns_left, bytes, length);
 				if (columns_left + num_chars <= old_run_chars) {
 					// The replacement was entirely within one run; we're done.
@@ -64,7 +65,7 @@ void Line::replace_characters(int column, const char* bytes, int length, Style s
 					}
 				else if (columns_left + num_chars < old_run_chars) {
 					// The replacement is entirely within one run; we'll need to split it.
-					// Create the new run.
+					// Create the new run from the second part of the existing run.
 					const char* run_bytes = (*run)->bytes();
 					int run_bytes_length = strlen(run_bytes);
 					const char* src_bytes_start =
@@ -112,11 +113,79 @@ void Line::replace_characters(int column, const char* bytes, int length, Style s
 }
 
 
+void Line::append_tab(Style style)
+{
+	Run* run = new Run(strdup("\t"), style);
+	run->is_tab = true;
+	runs.push_back(run);
+	has_tabs = true;
+}
+
+
+void Line::replace_character_with_tab(int column, Style style)
+{
+	Run* tab_run = new Run(strdup("\t"), style);
+	tab_run->is_tab = true;
+	has_tabs = true;
+
+	if (runs.empty()) {
+		runs.push_back(tab_run);
+		return;
+		}
+
+	int columns_left = column;
+	for (auto run = runs.begin(); run != runs.end(); ++run) {
+		int old_run_chars = (*run)->num_characters();
+		if (columns_left < old_run_chars) {
+			auto insert_before = runs.end();
+			if (columns_left == 0) {
+				// New characters go rignt before this run.
+				insert_before = run;
+				}
+			else if (columns_left + 1 < old_run_chars) {
+				// Splitting the run.
+				// Create the new run from the second part of the existing run.
+				const char* run_bytes = (*run)->bytes();
+				int run_bytes_length = strlen(run_bytes);
+				const char* src_bytes_start =
+					run_bytes +
+					UTF8::bytes_for_n_characters(
+						run_bytes, run_bytes_length, columns_left + 1);
+				int src_length = run_bytes + run_bytes_length - src_bytes_start;
+				Run* new_run = new Run((*run)->style);
+				new_run->append_characters(src_bytes_start, src_length);
+				// Add it.
+				auto where = run;
+				where++;
+				runs.insert(where, new_run);
+				// Trim the existing run.
+				(*run)->shorten_to(columns_left);
+				// The tab goes before the next run (the one we just split off).
+				insert_before = run;
+				insert_before++;
+				}
+			else {
+				// Replacing the last character of this run.
+				(*run)->shorten_to(columns_left);
+				// Tab goes before the next run.
+				insert_before = run;
+				insert_before++;
+				}
+			// Add it.
+			runs.insert(insert_before, tab_run);
+			break;
+			}
+		columns_left -= old_run_chars;
+		}
+}
+
+
 void Line::clear()
 {
 	for (auto& run: runs)
 		delete run;
 	runs.clear();
+	has_tabs = false;
 }
 
 
@@ -205,6 +274,8 @@ void Line::clear_to_end_from(int column)
 			}
 		}
 	runs.erase(first_to_delete, runs.end());
+
+	recalc_has_tabs();
 }
 
 
@@ -225,6 +296,8 @@ void Line::clear_from_beginning_to(int column)
 			}
 		column -= run_num_chars;
 		}
+
+	recalc_has_tabs();
 }
 
 
@@ -295,6 +368,20 @@ void Line::delete_characters(int column, int num_chars)
 			column -= run_num_chars;
 		}
 	runs.erase(first_to_delete, deleted_runs_end);
+
+	recalc_has_tabs();
+}
+
+
+void Line::recalc_has_tabs()
+{
+	has_tabs = false;
+	for (auto& run: runs) {
+		if (run->is_tab) {
+			has_tabs = true;
+			return;
+			}
+		}
 }
 
 

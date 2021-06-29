@@ -190,6 +190,16 @@ int History::add_input(const char* input, int length)
 					}
 				break;
 
+			case '\t':
+				{
+				Line* cur_line = line(current_line);
+				if (at_end_of_line)
+					cur_line->append_tab(current_style);
+				else
+					cur_line->replace_character_with_tab(current_column, current_style);
+				}
+				break;
+
 			case '\a':
 				// BEL.  Ignore.
 				break;

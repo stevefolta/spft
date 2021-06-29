@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+
+# This is a wrapper around "ls" that results in tabbed output that's suitable
+# for elastic tabs.
+
+import subprocess, sys, os, re
+
+def display_length(string):
+	num_displayed_chars = 0
+	in_escape_sequence = False
+	for c in string:
+		if in_escape_sequence:
+			if ord(c) >= 0x40 and ord(c) <= 0x7E and c != '[':
+				in_escape_sequence = False
+		elif c == '\x1B':
+			in_escape_sequence = True
+		else:
+			num_displayed_chars += 1
+	return num_displayed_chars
+
+
+# Columnation, following how "ls" does it.
+
+min_column_width = 3
+column_separator_width_estimate = 4
+
+class ColumnInfo:
+	def __init__(self, index):
+		self.valid_length = True
+		self.line_length = (index + 1) * min_column_width
+		self.col_arr = [ min_column_width ] * (index + 1)
+
+def columnate(filenames):
+	# Set up for columnation.
+	line_length = 80
+	if "COLUMNS" in os.environ:
+		line_length = int(os.environ["COLUMNS"])
+	max_possible_columns = int(line_length / min_column_width)
+	if (line_length % min_column_width) != 0:
+		max_possible_columns += 1
+	max_cols = min(max_possible_columns, len(filenames))
+	column_info = []
+	for index in range(max_cols):
+		column_info.append(ColumnInfo(index))
+	
+	# Compute the maximum number of possible columns.
+	# "Compute" here means "try all the possible numbers of columns".
+	num_files = len(filenames)
+	if num_files == 0:
+		return
+	for which_file in range(num_files):
+		filename = filenames[which_file]
+		name_length = display_length(filename)
+		for cur_num_columns in range(1, max_cols + 1):
+			cur_column_info = column_info[cur_num_columns - 1]
+			if cur_column_info.valid_length:
+				which_column = int(which_file / ((num_files + cur_num_columns -1) / cur_num_columns))
+				real_length = name_length
+				if which_column != cur_num_columns - 1:
+					real_length += column_separator_width_estimate
+				if cur_column_info.col_arr[which_column] < real_length:
+					cur_column_info.line_length += real_length - cur_column_info.col_arr[which_column]
+					cur_column_info.col_arr[which_column] = real_length
+					cur_column_info.valid_length = cur_column_info.line_length < line_length
+	# Find the largest number of columns that fit.
+	num_columns = max_cols
+	while num_columns > 1:
+		if column_info[num_columns - 1].valid_length:
+			break
+		num_columns -= 1
+	
+	# Now output the filenames.
+	num_rows = int(num_files / num_columns)
+	if num_files % num_columns != 0:
+		num_rows += 1
+	for which_row in range(num_rows):
+		which_column = 0
+		which_file = which_row
+		while True:
+			print(filenames[which_file], end = '')
+			which_file += num_rows
+			if which_file >= num_files:
+				break
+			print('\t', end = '')
+		print()
+
+
+#######
+
+ls_args = []
+long_output = False
+for arg in sys.argv[1:]:
+	if arg[0:2] != "--" and arg[0] == "-":
+		long_output = True
+	ls_args.append(arg)
+
+# Find "ls" in the path.
+ls_binary = ""
+for path in os.environ["PATH"].split(":"):
+	file_path = path + "/ls"
+	if os.path.isfile(file_path) and os.access(file_path, os.X_OK):
+		ls_binary = file_path
+		break
+if ls_binary == "":
+	printf(f"Couldn't find \"ls\"!", file = sys.stderr)
+	sys.exit(1)
+
+result = subprocess.run([ls_binary] + ls_args + ["-1"], capture_output = True, encoding = "utf-8")
+print(result.stderr, file = sys.stderr, end = '', flush = True)
+
+if long_output:
+	long_re = re.compile('([\w-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\S+)\s+(\w+\s+\d+\s+[\d:]+)\s+([^\r\n]+)')
+	for line in result.stdout.splitlines():
+		match = long_re.match(line)
+		if match:
+			print('\t'.join(match.groups()))
+		else:
+			print(line.strip())
+else:
+	filenames = result.stdout.splitlines()
+	columnate(filenames)
+
+sys.exit(result.returncode)
+
+

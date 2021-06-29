@@ -204,17 +204,35 @@ void TermWindow::draw()
 		last_line = history->get_last_line();
 	int y = xft_font->ascent;
 	int64_t current_line = history->get_current_line();
+	bool in_tabs = false;
+	std::vector<int> column_widths;
 	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
 		bool line_contains_cursor =
 			which_line == current_line && history->cursor_enabled;
 		bool line_contains_inversity_change =
 			line_contains_cursor ||
 			which_line == selection_start.line || which_line == selection_end.line;
+		Line* line = history->line(which_line);
+
+		// Start handling elastic tabs.
+		if (line->has_tabs) {
+			if (!in_tabs)
+				build_column_widths(column_widths, which_line, last_line);
+			in_tabs = true;
+			}
+		else {
+			if (in_tabs) {
+				column_widths.clear();
+				in_tabs = false;
+				}
+			}
+		int cur_column_width = 0;
+		int which_column = 0;
+		bool past_indentation = false;
 
 		// Draw the runs in the line.
 		int x = 0;
 		int chars_drawn = 0; 	// Only updated for the line with the cursor or a selection change on it.
-		Line* line = history->line(which_line);
 		int current_column = history->get_current_column();
 		for (auto run: *line) {
 			int num_bytes = strlen(run->bytes());
@@ -248,6 +266,40 @@ void TermWindow::draw()
 					}
 				}
 
+			// Tab.
+			if (run->is_tab) {
+				int tab_width = settings.indent_width;
+				if (past_indentation) {
+					tab_width =
+						column_widths[which_column] - cur_column_width +
+						settings.column_separation;
+					}
+
+				// Draw the tab.
+				SelectionPoint draw_point(which_line, chars_drawn);
+				bool inversity =
+					(line_contains_cursor && current_column == chars_drawn) ^
+					(draw_point >= selection_start && draw_point < selection_end);
+				uint32_t cur_background = (inversity ? foreground_color : background_color);
+				if (cur_background != settings.default_background_color) {
+					XftDrawRect(
+						xft_draw, colors.xft_color(cur_background),
+						x, y - xft_font->ascent,
+						tab_width, xft_font->height);
+					}
+				x += tab_width;
+				chars_drawn += 1;
+
+				// Start the next column.
+				if (past_indentation) {
+					which_column += 1;
+					cur_column_width = 0;
+					}
+
+				continue;
+				}
+			past_indentation = true;
+
 			// The simple case: drawing the entire run at once.
 			if (!run_contains_inversity_change) {
 				XftTextExtentsUtf8(
@@ -277,6 +329,7 @@ void TermWindow::draw()
 					(const FcChar8*) run->bytes(), num_bytes);
 
 				x += glyph_info.xOff; 	// Not "width".  It'd be nice if Xft were documented...
+				cur_column_width += glyph_info.xOff;
 				if (line_contains_inversity_change)
 					chars_drawn += run->num_characters();
 				}
@@ -339,6 +392,7 @@ void TermWindow::draw()
 					chars_drawn += subrun_num_chars;
 					subrun_start_byte += subrun_num_bytes;
 					x += subrun_width;
+					cur_column_width += subrun_width;
 					}
 				}
 			}
@@ -924,6 +978,53 @@ TermWindow::SelectionPoint TermWindow::end_of_word(SelectionPoint point)
 		point.column += 1;
 		}
 	return point;
+}
+
+
+void TermWindow::build_column_widths(
+	std::vector<int>& column_widths, int64_t first_line, int64_t last_line)
+{
+	for (int which_line = first_line; which_line <= last_line; ++which_line) {
+		Line* line = history->line(which_line);
+		if (!line->has_tabs)
+			break;
+
+		std::vector<int>::size_type which_column = 0;
+		int column_width = 0;
+		bool past_indentation = false;
+		for (auto run: *line) {
+			if (run->is_tab) {
+				if (!past_indentation) {
+					// Indentation is completely separate, not part of the columns.
+					continue;
+					}
+
+				// Finish this column.
+				if (column_widths.size() <= which_column)
+					column_widths.push_back(column_width);
+				else if (column_width > column_widths[which_column])
+					column_widths[which_column] = column_width;
+				which_column += 1;
+				column_width = 0;
+				continue;
+				}
+
+			// Incorporate this run into the current column width;
+			XGlyphInfo glyph_info;
+			const char* run_bytes = run->bytes();
+			XftTextExtentsUtf8(
+				display, xft_font,
+				(const FcChar8*) run_bytes, strlen(run_bytes), &glyph_info);
+			column_width += glyph_info.xOff;
+			past_indentation = true;
+			}
+
+		// Finish the last column.
+		if (column_widths.size() <= which_column)
+			column_widths.push_back(column_width);
+		else if (column_width > column_widths[which_column])
+			column_widths[which_column] = column_width;
+		}
 }
 
 

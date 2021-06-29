@@ -5,13 +5,13 @@
 
 
 Run::Run(Style style_in)
-	: style(style_in), characters(nullptr)
+	: style(style_in), is_tab(false), characters(nullptr)
 {
 }
 
 
 Run::Run(char* initial_characters, Style style_in)
-	: style(style_in), characters(initial_characters)
+	: style(style_in), is_tab(false), characters(initial_characters)
 {
 }
 
