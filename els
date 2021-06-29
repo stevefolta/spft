@@ -87,9 +87,13 @@ def columnate(filenames):
 
 ls_args = []
 long_output = False
+first_line_summary = False
 for arg in sys.argv[1:]:
 	if arg[0:2] != "--" and arg[0] == "-":
-		long_output = True
+		if "l" in arg:
+			long_output = True
+		if "s" in arg:
+			first_line_summary = True
 	ls_args.append(arg)
 
 # Find "ls" in the path.
@@ -116,6 +120,9 @@ if long_output:
 			print(line.strip())
 else:
 	filenames = result.stdout.splitlines()
+	if first_line_summary and len(filenames) > 0:
+		print(filenames[0])
+		filenames = filenames[1:]
 	columnate(filenames)
 
 sys.exit(result.returncode)
