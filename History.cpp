@@ -377,6 +377,13 @@ const char* History::parse_csi(const char* p, const char* end)
 			at_end_of_line = false;
 			break;
 
+		case 'G':
+			// Cursor Character Absolute (CHA).
+			current_column = args.args[1] ? args.args[1] - 1 : 0;
+			ensure_current_column();
+			update_at_end_of_line();
+			break;
+
 		case 'H':
 			// Cursor Position.
 			current_line =
