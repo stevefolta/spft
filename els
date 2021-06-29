@@ -123,7 +123,15 @@ else:
 	if first_line_summary and len(filenames) > 0:
 		print(filenames[0])
 		filenames = filenames[1:]
-	columnate(filenames)
+	cur_filenames = []
+	for line in filenames:
+		if len(line) == 0 or line[-1] == ":":
+			columnate(cur_filenames)
+			cur_filenames = []
+			print(line)
+		else:
+			cur_filenames.append(line)
+	columnate(cur_filenames)
 
 sys.exit(result.returncode)
 
