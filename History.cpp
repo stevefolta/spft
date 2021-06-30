@@ -396,7 +396,7 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'G':
 			// Cursor Character Absolute (CHA).
-			current_column = args.args[1] ? args.args[1] - 1 : 0;
+			current_column = args.args[0] ? args.args[0] - 1 : 0;
 			ensure_current_column();
 			update_at_end_of_line();
 			break;

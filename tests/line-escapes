@@ -10,6 +10,16 @@ greyback = f"{csi}48;2;192;192;192m"
 def print_raw(*args, **kwargs):
 	print(*args, **kwargs, end = '', flush = True)
 
+def rainbowize(text, background = False):
+	color_index = 1
+	for c in text:
+		ps_code = 48 if background else 38
+		print_raw(f"{csi}{ps_code};5;{color_index}m{c}")
+		color_index += 1
+		if color_index >= 15:
+			color_index = 0
+	print_raw(f"{csi}0m")
+
 print(f'foo{csi}Cbar')
 print(f'foo xar{csi}D{csi}D{csi}Db')
 print(f'{greenback}foo {greyback}bar{reset}')
@@ -27,6 +37,12 @@ print(f"xxx xar\b\b\b\b\b\b\bfoo b")
 print(f"{greenback}xxx x{reset}ar\b\b\b\b\b\b\bfoo b")
 # Replacing multiple runs.
 print(f"{csi}31mx{csi}32mx{csi}33mx {csi}34mx{reset}ar\rfoo b")
+rainbowize("fxx bar")
+print(f"\rfoo")
+rainbowize("fxx bar")
+print(f"{csi}2Goo")
+rainbowize("foo de bar")
+print(f"{csi}5G{csi}3P")
 # !!! NEED MORE! AND DELETION! !!!
 
 
