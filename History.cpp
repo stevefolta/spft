@@ -662,7 +662,13 @@ bool History::set_private_mode(int mode, bool set)
 			application_cursor_keys = set;
 			break;
 
+		case 12:
+			// Cursor blinking.
+			// We don't support this currently, so we're ignoring it.
+			break;
+
 		case 25:
+			// Show cursor (DECTCEM).
 			cursor_enabled = set;
 			break;
 
