@@ -338,6 +338,17 @@ const char* History::parse_csi(const char* p, const char* end)
 	c = *p++;
 	if (args.private_code_type == 0)
 	switch (c) {
+		case '@':
+			// Insert blank characters (ICH).
+			{
+			int num_blanks = args.args[0] ? args.args[0] : 1;
+			std::string blanks(num_blanks, ' ');
+			line(current_line)->insert_characters(
+				current_column, blanks.data(), num_blanks, current_style);
+			at_end_of_line = false;
+			}
+			break;
+
 		case 'A':
 		case 'F':
 			// Cursor up (CUU) / Cursor Prev Line (CPL).

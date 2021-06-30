@@ -16,6 +16,7 @@ class Line {
 
 		void	append_characters(const char* bytes, int length, Style style);
 		void	replace_characters(int column, const char* bytes, int length, Style style);
+		void	insert_characters(int column, const char* bytes, int length, Style style);
 		void	append_tab(Style style);
 		void	replace_character_with_tab(int column, Style style);
 		void	clear();
@@ -40,6 +41,7 @@ class Line {
 		std::list<Run*>	runs;
 
 		void	recalc_has_tabs();
+		void	split_run_at(std::list<Run*>::iterator run_to_split, int column);
 	};
 
 

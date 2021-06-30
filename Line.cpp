@@ -113,6 +113,48 @@ void Line::replace_characters(int column, const char* bytes, int length, Style s
 }
 
 
+void Line::insert_characters(int column, const char* bytes, int length, Style style)
+{
+	if (runs.empty()) {
+		Run* run = new Run(style);
+		run->append_characters(bytes, length);
+		runs.push_back(run);
+		return;
+		}
+
+	int columns_left = column;
+	for (auto run = runs.begin(); run != runs.end(); ++run) {
+		int old_run_chars = (*run)->num_characters();
+		if (columns_left == old_run_chars) {
+			if ((*run)->style == style && !(*run)->is_tab) {
+				// Add characters to the end of the run.
+				(*run)->append_characters(bytes, length);
+				break;
+				}
+			}
+		else if (columns_left < old_run_chars) {
+			if ((*run)->style == style && !(*run)->is_tab)
+				(*run)->insert_characters(columns_left, bytes, length);
+			else {
+				if (columns_left > 0) {
+					// We'll need to split the existing run.
+					split_run_at(run, columns_left);
+					// Insert between the old part and the new part.
+					run++;
+					}
+				// Insert the new run at this point.
+				Run* new_run = new Run(style);
+				new_run->append_characters(bytes, length);
+				runs.insert(run, new_run);
+				}
+			break;
+			}
+
+		columns_left -= old_run_chars;
+		}
+}
+
+
 void Line::append_tab(Style style)
 {
 	Run* run = new Run(strdup("\t"), style);
@@ -382,6 +424,28 @@ void Line::recalc_has_tabs()
 			return;
 			}
 		}
+}
+
+
+void Line::split_run_at(std::list<Run*>::iterator run_to_split, int column)
+{
+	const char* run_bytes = (*run_to_split)->bytes();
+	int run_bytes_length = strlen(run_bytes);
+	const char* src_bytes_start =
+		run_bytes +
+		UTF8::bytes_for_n_characters(
+			run_bytes, run_bytes_length, column);
+	int src_length = run_bytes + run_bytes_length - src_bytes_start;
+
+	// Create the new run.
+	Run* new_run = new Run((*run_to_split)->style);
+	new_run->append_characters(src_bytes_start, src_length);
+	// Add it.
+	auto where = run_to_split;
+	where++;
+	runs.insert(where, new_run);
+	// Trim the existing run.
+	(*run_to_split)->shorten_to(column);
 }
 
 
