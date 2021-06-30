@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import time
+# Each line should end up saying "foo bar" (or occasionally some Unicode
+# variant of that).
 
 csi = "\x1B["
 reset = f"{csi}0m"
@@ -20,13 +21,19 @@ def rainbowize(text, background = False):
 			color_index = 0
 	print_raw(f"{csi}0m")
 
+print("Basic:")
 print(f'foo{csi}Cbar')
 print(f'foo xar{csi}D{csi}D{csi}Db')
 print(f'{greenback}foo {greyback}bar{reset}')
 
+print()
+
 # Tests of Line::replace_characters().
+print("replace_characters():")
 # Splitting a run.
 print(f'foo xar\b\b\b{greenback}b{reset}')
+print(f'{greenback}fxx {greyback}bar{reset}{csi}2Goo')
+print(f'{greenback}fxx {greyback}bar{reset}{csi}2Goo ')
 # Grow a run.
 print(f'foo x\bbar')
 # Before a run.
@@ -41,10 +48,28 @@ rainbowize("fxx bar")
 print(f"\rfoo")
 rainbowize("fxx bar")
 print(f"{csi}2Goo")
+# UTF-8.
+rainbowize("fx bar")
+print(f"{csi}2G∞")
+rainbowize("foo bar")
+print(f"{csi}6Gä")
+rainbowize("f∞ bar")
+print(f"{csi}2Goo{csi}@")
+
+print()
+
+# Tests of Line::delete_characters().
+print("delete_characters():")
+# Deleting multiple runs.
 rainbowize("foo de bar")
 print(f"{csi}5G{csi}3P")
-# !!! NEED MORE! AND DELETION! !!!
 
+
+
+# Optional tests.
+# Not enabled by default because they take time.
+
+import time
 
 # Cursor disable/enable.
 def cursor_disable_test():
