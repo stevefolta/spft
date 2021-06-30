@@ -10,7 +10,7 @@
 
 
 Settings settings = {
-	.font_spec = "Helvetica Neue,sans\\-serif-17:style=Light",
+	.font_spec = "Helvetica Neue,sans\\-serif-16.5:style=Light",
 	.term_name = "xterm",
 	.default_foreground_color = 0,
 	.default_background_color = 15,

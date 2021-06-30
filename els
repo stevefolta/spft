@@ -22,7 +22,7 @@ def display_length(string):
 # Columnation, following how "ls" does it.
 
 min_column_width = 3
-column_separator_width_estimate = 4
+column_separator_width_estimate = 5
 
 class ColumnInfo:
 	def __init__(self, index):
