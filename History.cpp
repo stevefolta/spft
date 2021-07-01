@@ -471,8 +471,20 @@ const char* History::parse_csi(const char* p, const char* end)
 					case 0:
 						current_style.reset();
 						break;
+					case 1:
+						current_style.bold = true;
+						break;
+					case 3:
+						current_style.italic = true;
+						break;
 					case 7:
 						current_style.inverse = true;
+						break;
+					case 22:
+						current_style.bold = false;
+						break;
+					case 23:
+						current_style.italic = false;
 						break;
 					case 27:
 						current_style.inverse = false;

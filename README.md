@@ -61,7 +61,6 @@ I use "Helvetica Neue Light".  I wish I could find a free font that looks as nic
 What it still needs
 -----
 
-- Bold and italic.
 - Elastic tabs only when requested, regular tabs otherwise.
 - Many more escape sequences.
 - More testing of character insertion and deletion scenarios?

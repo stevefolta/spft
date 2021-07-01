@@ -4,6 +4,7 @@
 // This would just be called "Window", but that conflicts with XWindow's type
 // of the same name.
 
+#include "Style.h"
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <string>
@@ -37,7 +38,7 @@ class TermWindow {
 		GC gc;
 		Drawable pixmap;
 		XftDraw* xft_draw;
-		XftFont* xft_font;
+		XftFont* xft_fonts[4];
 		unsigned int width, height;
 
 		int64_t top_line;
@@ -88,6 +89,12 @@ class TermWindow {
 			KeySym key_sym, unsigned int state,
 			const KeyMapping* key_mappings, int num_key_mappings);
 
+		XftFont*	xft_font_for(const Style& style) {
+			return xft_fonts[style.italic << 1 | style.bold];
+			}
+
+		void	setup_fonts();
+		void	cleanup_fonts();
 		void	screen_size_changed();
 		void	key_down(XKeyEvent* event);
 		void	mouse_button_down(XButtonEvent* event);
@@ -96,7 +103,7 @@ class TermWindow {
 		void	selection_requested(XSelectionRequestEvent* event);
 		void	property_changed(XEvent* event);
 		void	received_selection(XEvent* event);
-		int	displayed_lines() { return height / xft_font->height; }
+		int	displayed_lines() { return height / xft_fonts[0]->height; }
 		void	scroll_to_bottom() { top_line = -1; }
 
 		void	paste();
