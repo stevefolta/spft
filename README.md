@@ -20,7 +20,8 @@ to do various things.
 spft is somewhere between the two in both functionality and code style.  spft
 isn't written in a "suckless" style like st is (it's in C++, for a start), but
 it still aspires to be as minimal and direct as possible.  It compiles in under
-a second for me if I use all the cores on my machine.
+a second for me if I use all the cores on my machine.  It also appears to use
+much less memory than mlterm, even when keeping much more scrollback history.
 
 
 Status
