@@ -627,7 +627,10 @@ const char* History::parse_csi(const char* p, const char* end)
 			case 'h':
 				// Set Mode (SM).
 				for (int i = 0; i < args.num_args; ++i) {
-					bool handled = set_private_mode(args.args[i], true);
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					bool handled =
+#endif
+						set_private_mode(args.args[i], true);
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 					if (!handled)
 						printf("- Unimplemented set mode: ?%d\n", args.args[i]);
@@ -638,7 +641,10 @@ const char* History::parse_csi(const char* p, const char* end)
 			case 'l':
 				// Reset Mode (RM).
 				for (int i = 0; i < args.num_args; ++i) {
-					bool handled = set_private_mode(args.args[i], false);
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					bool handled =
+#endif
+						set_private_mode(args.args[i], false);
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 					if (!handled)
 						printf("- Unimplemented reset mode: ?%d\n", args.args[i]);
