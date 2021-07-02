@@ -841,7 +841,7 @@ void TermWindow::selection_requested(XSelectionRequestEvent* event)
 	if (event->target == targets_atom) {
 		// Respond with the supported type.
 		XChangeProperty(
-			event->display, event->requestor, event->requestor,
+			event->display, event->requestor, event->property,
 			XA_ATOM, 32, PropModeReplace,
 			(unsigned char*) &target_atom, 1);
 		response.property = event->property;
