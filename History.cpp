@@ -3,6 +3,7 @@
 #include "Colors.h"
 #include "UTF8.h"
 #include "Terminal.h"
+#include "ElasticTabs.h"
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 	#include <stdio.h>
 #endif
@@ -25,13 +26,28 @@ History::History() :
 	top_margin = 0;
 	bottom_margin = -1;
 	alternate_screen_top_line = -1;
+	current_elastic_tabs = nullptr;
 }
 
 
 History::~History()
 {
-	for (int64_t i = 0; i < capacity; ++i)
-		delete lines[i];
+	// Because of elastic tabs, we have to delete the lines in line-number order.
+	int64_t index = first_line_index;
+	int64_t ultimate_end = first_line + capacity;
+	for (int64_t which_line = first_line; which_line < ultimate_end; ++which_line) {
+		if (lines[index] && lines[index]->elastic_tabs) {
+			if (lines[index]->elastic_tabs->last_line == which_line)
+				delete lines[index]->elastic_tabs;
+			}
+
+		delete lines[index];
+
+		index += 1;
+		if (index >= capacity)
+			index = 0;
+		}
+
 	delete[] lines;
 }
 
@@ -193,10 +209,18 @@ int History::add_input(const char* input, int length)
 			case '\t':
 				{
 				Line* cur_line = line(current_line);
-				if (at_end_of_line)
+				if (at_end_of_line) {
 					cur_line->append_tab(current_style);
-				else
+					// Just need to make sure "current_elastic_tabs" gets enough
+					// columns.
+					characters_added();
+					}
+				else {
 					cur_line->replace_character_with_tab(current_column, current_style);
+					// Could be splitting a column.  Trigger a full recalculation of
+					// the columns.
+					characters_deleted();
+					}
 				}
 				break;
 
@@ -237,6 +261,7 @@ void History::add_to_current_line(const char* start, const char* end)
 			current_column, start, end - start, current_style);
 		}
 	current_column += UTF8::num_characters(start, end - start);
+	characters_added();
 	if (!at_end_of_line)
 		update_at_end_of_line();
 }
@@ -246,6 +271,7 @@ void History::new_line()
 {
 	allocate_new_line();
 	current_line = last_line;
+	line(current_line)->elastic_tabs = current_elastic_tabs;
 	at_end_of_line = true;
 }
 
@@ -258,7 +284,20 @@ void History::allocate_new_line()
 		// (It might not be necessary because window resizing can delete lines
 		// from the bottom.)
 		int last_line_index = line_index(last_line);
-		lines[last_line_index]->clear();
+		Line* line = lines[last_line_index];
+		line->clear();
+		if (line->elastic_tabs) {
+			if (last_line_index == first_line_index) {
+				if (line->elastic_tabs->last_line == first_line) {
+					// This is the final line still referencing "elastic_tabs", so it's
+					// time to delete it.
+					delete line->elastic_tabs;
+					}
+				}
+			line->elastic_tabs = nullptr;
+			}
+
+		// If we took "first_line", update that.
 		if (last_line_index == first_line_index) {
 			first_line += 1;
 			first_line_index += 1;
@@ -346,6 +385,7 @@ const char* History::parse_csi(const char* p, const char* end)
 			line(current_line)->insert_characters(
 				current_column, blanks.data(), num_blanks, current_style);
 			at_end_of_line = false;
+			characters_added();
 			}
 			break;
 
@@ -440,6 +480,7 @@ const char* History::parse_csi(const char* p, const char* end)
 					cur_line->prepend_spaces(current_column, current_style);
 				at_end_of_line = true;
 				}
+			characters_deleted();
 			}
 			break;
 
@@ -457,6 +498,7 @@ const char* History::parse_csi(const char* p, const char* end)
 			// Delete Character (DCH).
 			line(current_line)->delete_characters(current_column, args.args[0] ? args.args[0] : 1);
 			update_at_end_of_line();
+			characters_deleted();
 			break;
 
 		case 'm':
@@ -696,6 +738,13 @@ bool History::set_private_mode(int mode, bool set)
 			use_bracketed_paste = set;
 			break;
 
+		case 5001:
+			if (set)
+				start_elastic_tabs();
+			else
+				end_elastic_tabs();
+			break;
+
 		default:
 			return false;
 		}
@@ -865,6 +914,54 @@ void History::exit_alternate_screen()
 	update_at_end_of_line();
 }
 
+
+
+void History::start_elastic_tabs()
+{
+	end_elastic_tabs();
+
+	current_elastic_tabs = new ElasticTabs(current_line);
+	line(current_line)->elastic_tabs = current_elastic_tabs;
+}
+
+
+void History::end_elastic_tabs()
+{
+	if (current_elastic_tabs == nullptr)
+		return;
+
+	// The current cursor line will not be part of the group of elastic tabbed
+	// lines.
+	current_elastic_tabs->last_line = current_line - 1;
+	current_elastic_tabs = nullptr;
+	line(current_line)->elastic_tabs = nullptr;
+}
+
+
+void History::characters_added()
+{
+	if (current_elastic_tabs == nullptr)
+		return;
+
+	current_elastic_tabs->columns_could_be_widened = true;
+	if (current_elastic_tabs->first_dirty_line > current_line)
+		current_elastic_tabs->first_dirty_line = current_line;
+	if (current_elastic_tabs->last_dirty_line < current_line)
+		current_elastic_tabs->last_dirty_line = current_line;
+}
+
+
+void History::characters_deleted()
+{
+	if (current_elastic_tabs == nullptr)
+		return;
+
+	current_elastic_tabs->columns_could_be_narrowed = true;
+	if (current_elastic_tabs->first_dirty_line > current_line)
+		current_elastic_tabs->first_dirty_line = current_line;
+	if (current_elastic_tabs->last_dirty_line < current_line)
+		current_elastic_tabs->last_dirty_line = current_line;
+}
 
 
 const char* History::Arguments::parse(const char* p, const char* end)

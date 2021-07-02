@@ -6,6 +6,7 @@
 
 class Line;
 class Terminal;
+class ElasticTabs;
 
 // The History is the heart of the terminal.  It's the list of all the lines,
 // and it gets the characters and interprets them to build those lines.
@@ -85,6 +86,12 @@ class History {
 
 		void	enter_alternate_screen();
 		void	exit_alternate_screen();
+
+		void	start_elastic_tabs();
+		void	end_elastic_tabs();
+		void	characters_added();
+		void	characters_deleted();
+		ElasticTabs* current_elastic_tabs;
 
 		struct Arguments {
 			enum {

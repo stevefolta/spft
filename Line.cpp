@@ -8,7 +8,7 @@
 
 
 Line::Line()
-	: has_tabs(false)
+	: elastic_tabs(nullptr)
 {
 }
 
@@ -160,7 +160,6 @@ void Line::append_tab(Style style)
 	Run* run = new Run(strdup("\t"), style);
 	run->is_tab = true;
 	runs.push_back(run);
-	has_tabs = true;
 }
 
 
@@ -168,7 +167,6 @@ void Line::replace_character_with_tab(int column, Style style)
 {
 	Run* tab_run = new Run(strdup("\t"), style);
 	tab_run->is_tab = true;
-	has_tabs = true;
 
 	if (runs.empty()) {
 		runs.push_back(tab_run);
@@ -227,7 +225,6 @@ void Line::clear()
 	for (auto& run: runs)
 		delete run;
 	runs.clear();
-	has_tabs = false;
 }
 
 
@@ -316,8 +313,6 @@ void Line::clear_to_end_from(int column)
 			}
 		}
 	runs.erase(first_to_delete, runs.end());
-
-	recalc_has_tabs();
 }
 
 
@@ -338,8 +333,6 @@ void Line::clear_from_beginning_to(int column)
 			}
 		column -= run_num_chars;
 		}
-
-	recalc_has_tabs();
 }
 
 
@@ -410,20 +403,6 @@ void Line::delete_characters(int column, int num_chars)
 			column -= run_num_chars;
 		}
 	runs.erase(first_to_delete, deleted_runs_end);
-
-	recalc_has_tabs();
-}
-
-
-void Line::recalc_has_tabs()
-{
-	has_tabs = false;
-	for (auto& run: runs) {
-		if (run->is_tab) {
-			has_tabs = true;
-			return;
-			}
-		}
 }
 
 

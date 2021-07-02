@@ -4,6 +4,7 @@
 #include "Line.h"
 #include "Run.h"
 #include "Colors.h"
+#include "ElasticTabs.h"
 #include "Settings.h"
 #include "UTF8.h"
 #include <X11/cursorfont.h>
@@ -267,8 +268,6 @@ void TermWindow::draw()
 		last_line = history->get_last_line();
 	int y = xft_fonts[0]->ascent;
 	int64_t current_line = history->get_current_line();
-	bool in_tabs = false;
-	std::vector<int> column_widths;
 	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
 		bool line_contains_cursor =
 			which_line == current_line && history->cursor_enabled;
@@ -277,21 +276,15 @@ void TermWindow::draw()
 			which_line == selection_start.line || which_line == selection_end.line;
 		Line* line = history->line(which_line);
 
-		// Start handling elastic tabs.
-		if (line->has_tabs) {
-			if (!in_tabs)
-				build_column_widths(column_widths, which_line, last_line);
-			in_tabs = true;
-			}
-		else {
-			if (in_tabs) {
-				column_widths.clear();
-				in_tabs = false;
-				}
+		// Handle elastic tabs.
+		if (line->elastic_tabs) {
+			if (line->elastic_tabs->columns_could_be_narrowed)
+				recalc_elastic_columns(which_line);
+			else if (line->elastic_tabs->columns_could_be_widened)
+				widen_elastic_columns(which_line);
 			}
 		int cur_column_width = 0;
 		int which_column = 0;
-		bool past_indentation = false;
 
 		// Draw the runs in the line.
 		int x = 0;
@@ -331,11 +324,21 @@ void TermWindow::draw()
 
 			// Tab.
 			if (run->is_tab) {
-				int tab_width = settings.indent_width;
-				if (past_indentation) {
+				int tab_width = 0;
+				if (line->elastic_tabs) {
+					int column_width =
+						line->elastic_tabs->column_widths[which_column];
 					tab_width =
-						column_widths[which_column] - cur_column_width +
-						settings.column_separation;
+						column_width - cur_column_width + settings.column_separation;
+					}
+				else {
+					tab_width = settings.tab_width - (x % settings.tab_width);
+					// Make sure we always have at least the width of a space.
+					XftTextExtentsUtf8(
+						display, xft_font_for(run->style),
+						(const FcChar8*) " ", 1, &glyph_info);
+					if (tab_width < glyph_info.xOff)
+						tab_width += settings.tab_width;
 					}
 
 				// Draw the tab.
@@ -354,14 +357,11 @@ void TermWindow::draw()
 				chars_drawn += 1;
 
 				// Start the next column.
-				if (past_indentation) {
-					which_column += 1;
-					cur_column_width = 0;
-					}
+				which_column += 1;
+				cur_column_width = 0;
 
 				continue;
 				}
-			past_indentation = true;
 
 			// The simple case: drawing the entire run at once.
 			XftFont* xft_font = xft_font_for(run->style);
@@ -1045,50 +1045,87 @@ TermWindow::SelectionPoint TermWindow::end_of_word(SelectionPoint point)
 }
 
 
-void TermWindow::build_column_widths(
-	std::vector<int>& column_widths, int64_t first_line, int64_t last_line)
+void TermWindow::widen_elastic_columns(int64_t initial_line)
 {
-	for (int which_line = first_line; which_line <= last_line; ++which_line) {
-		Line* line = history->line(which_line);
-		if (!line->has_tabs)
-			break;
+	Line* line = history->line(initial_line);
+	if (line == nullptr || line->elastic_tabs == nullptr)
+		return;
+	ElasticTabs* elastic_tabs = line->elastic_tabs;
 
-		std::vector<int>::size_type which_column = 0;
-		int column_width = 0;
-		bool past_indentation = false;
-		for (auto run: *line) {
-			if (run->is_tab) {
-				if (!past_indentation) {
-					// Indentation is completely separate, not part of the columns.
-					continue;
-					}
+	// Update from the dirty lines.
+	int64_t which_line = elastic_tabs->first_dirty_line;
+	if (which_line < history->get_first_line())
+		which_line = history->get_first_line();
+	int64_t last_line = elastic_tabs->last_dirty_line;
+	if (last_line < history->get_last_line())
+		last_line = history->get_last_line();
+	for (; which_line <= last_line; ++which_line)
+		update_elastic_columns_for(which_line);
+	elastic_tabs->undirtify();
+}
 
-				// Finish this column.
-				if (column_widths.size() <= which_column)
-					column_widths.push_back(column_width);
-				else if (column_width > column_widths[which_column])
-					column_widths[which_column] = column_width;
-				which_column += 1;
-				column_width = 0;
-				continue;
-				}
 
-			// Incorporate this run into the current column width;
-			XGlyphInfo glyph_info;
-			const char* run_bytes = run->bytes();
-			XftTextExtentsUtf8(
-				display, xft_font_for(run->style),
-				(const FcChar8*) run_bytes, strlen(run_bytes), &glyph_info);
-			column_width += glyph_info.xOff;
-			past_indentation = true;
+void TermWindow::recalc_elastic_columns(int64_t initial_line)
+{
+	Line* line = history->line(initial_line);
+	if (line == nullptr || line->elastic_tabs == nullptr)
+		return;
+	ElasticTabs* elastic_tabs = line->elastic_tabs;
+
+	// Recalculate from scratch using all lines in the group.
+	elastic_tabs->column_widths.clear();
+	int64_t which_line = elastic_tabs->first_line;
+	if (which_line < history->get_first_line()) {
+		elastic_tabs->first_line = history->get_first_line();
+		which_line = history->get_first_line();
+		}
+	int64_t last_line = elastic_tabs->last_line;
+	if (last_line < history->get_last_line()) {
+		elastic_tabs->last_line = history->get_last_line();
+		last_line = history->get_last_line();
+		}
+	for (; which_line <= last_line; ++which_line)
+		update_elastic_columns_for(which_line);
+
+	elastic_tabs->undirtify();
+}
+
+
+void TermWindow::update_elastic_columns_for(int64_t which_line)
+{
+	Line* line = history->line(which_line);
+	if (line == nullptr || line->elastic_tabs == nullptr)
+		return;
+	ElasticTabs* elastic_tabs = line->elastic_tabs;
+
+	std::vector<int>::size_type which_column = 0;
+	int column_width = 0;
+	for (auto run: *line) {
+		if (run->is_tab) {
+			// Finish this column.
+			if (elastic_tabs->column_widths.size() <= which_column)
+				elastic_tabs->column_widths.push_back(column_width);
+			else if (column_width > elastic_tabs->column_widths[which_column])
+				elastic_tabs->column_widths[which_column] = column_width;
+			which_column += 1;
+			column_width = 0;
+			continue;
 			}
 
-		// Finish the last column.
-		if (column_widths.size() <= which_column)
-			column_widths.push_back(column_width);
-		else if (column_width > column_widths[which_column])
-			column_widths[which_column] = column_width;
+		// Incorporate this run into the current column width;
+		XGlyphInfo glyph_info;
+		const char* run_bytes = run->bytes();
+		XftTextExtentsUtf8(
+			display, xft_font_for(run->style),
+			(const FcChar8*) run_bytes, strlen(run_bytes), &glyph_info);
+		column_width += glyph_info.xOff;
 		}
+
+	// Finish the last column.
+	if (elastic_tabs->column_widths.size() <= which_column)
+		elastic_tabs->column_widths.push_back(column_width);
+	else if (column_width > elastic_tabs->column_widths[which_column])
+		elastic_tabs->column_widths[which_column] = column_width;
 }
 
 

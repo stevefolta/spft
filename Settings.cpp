@@ -19,7 +19,7 @@ Settings settings = {
 	.word_separator_characters = " \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
 	.additional_word_separator_characters = "",
 	.window_title = "spft",
-	.indent_width = 30,
+	.tab_width = 24,
 	.column_separation = 20,
 	};
 
@@ -101,8 +101,8 @@ void SettingsParser::parse()
 					settings.additional_word_separator_characters = unquote_string(value_token);
 				else if (setting_name == "window_title")
 					settings.window_title = unquote_string(value_token);
-				else if (setting_name == "indent_width")
-					settings.indent_width = parse_uint32(value_token);
+				else if (setting_name == "tab_width")
+					settings.tab_width = parse_uint32(value_token);
 				else if (setting_name == "column_separation")
 					settings.column_separation = parse_uint32(value_token);
 				else

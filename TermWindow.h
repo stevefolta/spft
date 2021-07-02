@@ -8,7 +8,6 @@
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <string>
-#include <vector>
 #include <time.h>
 #include <stdint.h>
 
@@ -113,8 +112,10 @@ class TermWindow {
 		SelectionPoint	start_of_word(SelectionPoint point);
 		SelectionPoint	end_of_word(SelectionPoint point);
 
-		void	build_column_widths(
-			std::vector<int>& column_widths, int64_t first_line, int64_t last_line);
+		// Elastic tabs.
+		void	widen_elastic_columns(int64_t initial_line);
+		void	recalc_elastic_columns(int64_t initial_line);
+		void	update_elastic_columns_for(int64_t which_line);
 	};
 
 

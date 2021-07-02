@@ -71,6 +71,7 @@ def columnate(filenames):
 	num_rows = int(num_files / num_columns)
 	if num_files % num_columns != 0:
 		num_rows += 1
+	print("\x1B[?5001h", end = '')
 	for which_row in range(num_rows):
 		which_column = 0
 		which_file = which_row
@@ -81,6 +82,7 @@ def columnate(filenames):
 				break
 			print('\t', end = '')
 		print()
+	print("\x1B[?5001l", end = '')
 
 
 #######

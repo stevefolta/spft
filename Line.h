@@ -6,13 +6,14 @@
 #include <string>
 
 class Run;
+class ElasticTabs;
 
 class Line {
 	public:
 		Line();
 		~Line();
 
-		bool	has_tabs;
+		ElasticTabs* elastic_tabs;
 
 		void	append_characters(const char* bytes, int length, Style style);
 		void	replace_characters(int column, const char* bytes, int length, Style style);
@@ -40,7 +41,6 @@ class Line {
 	protected:
 		std::list<Run*>	runs;
 
-		void	recalc_has_tabs();
 		void	split_run_at(std::list<Run*>::iterator run_to_split, int column);
 	};
 

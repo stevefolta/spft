@@ -72,9 +72,23 @@ setting \(lqword_separator_characters\(rq, or add to them by setting
 .TP
 .B window_title
 The title of the window.
+.TP
+.B tab_width
+The tab width for tab-stop (that is, non-elastic) tabs, in pixels.
+.TP
+.B column_separation
+The space between columns when using elastic tabs, in pixels.
+
+
+.SH ELASTIC TABS
+spft supports elastic tabs, enabled by a pair of non-standard "DEC Private
+Mode" escape sequences.  "\\x1B[?5001h" signals that the current cursor line
+starts group of lines with elastic tabs.  "\\x1B[?5001l" ends that group of
+lines; the current cursor line will not be part of it.
+
 
 .SH SEE ALSO
-.BR st (1),
-.BR mlterm (1)
+.BR mlterm (1),
+.BR st (1)
 
 

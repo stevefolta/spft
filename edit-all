@@ -4,14 +4,14 @@ import subprocess, os
 
 classes = [
 	"TermWindow", "Terminal", "History", "Line", "Run", "Style",
-	"Settings", "UTF8", "Colors"
+	"Settings", "UTF8", "Colors", "ElasticTabs",
 	]
 
 files = []
 for class_name in classes:
 	files.append(class_name + ".h")
 	files.append(class_name + ".cpp")
-files += [ "main.cpp", "Makefile", "Makefile.local", "edit-all", "README.md" ]
+files += [ "main.cpp", "Makefile", "Makefile.local", "edit-all", "spft.1", "README.md" ]
 
-subprocess.run([ f"{os.environ['EDITOR']}" ] + files)
+subprocess.run([ os.environ['EDITOR'] ] + files)
 

@@ -17,7 +17,7 @@ struct Settings {
 	std::string additional_word_separator_characters;
 	std::string window_title;
 	std::string working_directory;
-	uint32_t indent_width, column_separation;
+	uint32_t tab_width, column_separation;
 
 	void	read_settings_files();
 	void	read_settings_file(std::string path);
