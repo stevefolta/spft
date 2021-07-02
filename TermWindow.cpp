@@ -966,18 +966,53 @@ int TermWindow::column_for_pixel(int64_t which_line, int x)
 {
 	Line* line = history->line(which_line);
 	int column = 0;
+	int cur_column_width = 0;
+	int which_column = 0;
+	XGlyphInfo glyph_info;
+	int initial_x = x;
 	for (auto run: *line) {
+		// Tab.
+		if (run->is_tab) {
+			int tab_width = 0;
+			if (line->elastic_tabs) {
+				int column_width =
+					line->elastic_tabs->column_widths[which_column];
+				tab_width =
+					column_width - cur_column_width + settings.column_separation;
+				}
+			else {
+				tab_width = settings.tab_width - ((initial_x - x) % settings.tab_width);
+				// Make sure we always have at least the width of a space.
+				XftTextExtentsUtf8(
+					display, xft_font_for(run->style),
+					(const FcChar8*) " ", 1, &glyph_info);
+				if (tab_width < glyph_info.xOff)
+					tab_width += settings.tab_width;
+				}
+
+			if (x < tab_width / 2)
+				return column;
+			x -= tab_width;
+			column += 1;
+
+			// Start the next column.
+			which_column += 1;
+			cur_column_width = 0;
+
+			continue;
+			}
+
 		const char* p = run->bytes();
 		const char* end = p + strlen(p);
 		while (p < end) {
 			int char_num_bytes = UTF8::bytes_for_n_characters(p, end - p, 1);
-			XGlyphInfo glyph_info;
 			XftTextExtentsUtf8(
 				display, xft_font_for(run->style),
 				(const FcChar8*) p, char_num_bytes, &glyph_info);
 			if (x < glyph_info.xOff / 2)
 				return column;
 			x -= glyph_info.xOff;
+			cur_column_width += glyph_info.xOff;
 			column += 1;
 			p += char_num_bytes;
 			}
