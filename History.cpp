@@ -139,6 +139,15 @@ int History::add_input(const char* input, int length)
 							printf("- Unimplemented escape: %c%.*s\n", c, (int) (parse_end - p), p);
 #endif
 							break;
+						case 'M':
+							// Reverse Index.
+							{
+							if (current_line == calc_screen_top_line() + top_margin)
+								insert_lines(1);
+							else
+								current_line -= 1;
+							}
+							break;
 						default:
 							// Unimplemented.
 							// We assume only one character follows the ESC.
