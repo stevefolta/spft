@@ -134,6 +134,11 @@ void Terminal::notify_resize(int columns, int rows, int pixel_width, int pixel_h
 }
 
 
+static void its_ok()
+{
+	// Alles cool, nothing to do.
+}
+
 void Terminal::exec_shell()
 {
 	const struct passwd* user_info = getpwuid(getuid());
@@ -173,7 +178,9 @@ void Terminal::exec_shell()
 		std::string path = settings.working_directory;
 		if (path[0] == '~')
 			path = settings.home_path() + path.substr(1);
-		chdir(path.c_str());
+		int result = chdir(path.c_str());
+		if (result < 0)
+			its_ok();
 		}
 
 	// Start the shell.
