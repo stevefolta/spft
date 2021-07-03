@@ -946,6 +946,8 @@ void History::characters_added()
 		return;
 
 	current_elastic_tabs->is_dirty = true;
+	if (current_line < current_elastic_tabs->first_dirty_line)
+		current_elastic_tabs->first_dirty_line = current_line;
 }
 
 
@@ -955,6 +957,7 @@ void History::characters_deleted()
 		return;
 
 	current_elastic_tabs->is_dirty = true;
+	current_elastic_tabs->first_dirty_line = 0;
 }
 
 

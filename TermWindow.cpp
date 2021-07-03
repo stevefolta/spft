@@ -1094,6 +1094,8 @@ void TermWindow::recalc_elastic_columns(int64_t initial_line)
 		Line* cur_line = history->line(which_line);
 		if (cur_line->elastic_tabs != elastic_tabs)
 			break;
+		if (which_line < elastic_tabs->first_dirty_line)
+			break;
 		update_elastic_columns_for(cur_line);
 		}
 

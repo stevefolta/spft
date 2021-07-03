@@ -8,7 +8,7 @@
 class ElasticTabs {
 	public:
 		ElasticTabs(int64_t initial_line) :
-			reference_count(0), is_dirty(false)
+			reference_count(0), is_dirty(false), first_dirty_line(INT64_MAX)
 			{}
 
 		std::vector<int>	column_widths;
@@ -22,7 +22,11 @@ class ElasticTabs {
 
 		// Dirtiness.
 		bool is_dirty;
-		void undirtify() { is_dirty = false; }
+		int64_t first_dirty_line;
+		void undirtify() {
+			is_dirty = false;
+			first_dirty_line = INT64_MAX;
+			}
 	};
 
 
