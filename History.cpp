@@ -318,7 +318,8 @@ void History::ensure_current_column()
 	Line* cur_line = line(current_line);
 	int cur_length = cur_line->num_characters();
 	if (current_column > cur_length) {
-		cur_line->append_spaces(current_column - cur_length, current_style);
+		Style default_style;
+		cur_line->append_spaces(current_column - cur_length, default_style);
 		at_end_of_line = true;
 		}
 	else if (current_column == cur_length)
