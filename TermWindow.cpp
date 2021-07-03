@@ -173,8 +173,9 @@ void TermWindow::setup_fonts()
 
 void TermWindow::cleanup_fonts()
 {
-	for (int i = 0; i < 4; ++i) {
-		XftFontClose(display, xft_fonts[i]);
+	for (int i = 3; i >= 0; --i) {
+		if (i == 0 || xft_fonts[i] != xft_fonts[0])
+			XftFontClose(display, xft_fonts[i]);
 		xft_fonts[i] = nullptr;
 		}
 }
