@@ -114,12 +114,14 @@ print(result.stderr, file = sys.stderr, end = '', flush = True)
 
 if long_output:
 	long_re = re.compile('([\w-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\S+)\s+(\w+\s+\d+\s+[\d:]+)\s+([^\r\n]+)')
+	print("\x1B[?5001h", end = '')
 	for line in result.stdout.splitlines():
 		match = long_re.match(line)
 		if match:
 			print('\t'.join(match.groups()))
 		else:
 			print(line.strip())
+	print("\x1B[?5001l", end = '')
 else:
 	filenames = result.stdout.splitlines()
 	if first_line_summary and len(filenames) > 0:
