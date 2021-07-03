@@ -8,23 +8,21 @@
 class ElasticTabs {
 	public:
 		ElasticTabs(int64_t initial_line) :
-			first_line(initial_line), last_line(initial_line),
-			columns_could_be_widened(false), columns_could_be_narrowed(false),
-			first_dirty_line(INT64_MAX), last_dirty_line(-1)
+			reference_count(0), is_dirty(false)
 			{}
 
-		int64_t	first_line, last_line;
 		std::vector<int>	column_widths;
+		int	reference_count;
+
+		void acquire() { reference_count += 1; }
+		void release() {
+			if (--reference_count <= 0)
+				delete this;
+			}
 
 		// Dirtiness.
-		bool columns_could_be_widened;
-		bool columns_could_be_narrowed;
-		int64_t	first_dirty_line, last_dirty_line;
-		void undirtify() {
-			first_dirty_line = INT64_MAX;
-			last_dirty_line = -1;
-			columns_could_be_widened = columns_could_be_narrowed = false;
-			}
+		bool is_dirty;
+		void undirtify() { is_dirty = false; }
 	};
 
 

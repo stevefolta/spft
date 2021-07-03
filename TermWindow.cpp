@@ -278,10 +278,8 @@ void TermWindow::draw()
 
 		// Handle elastic tabs.
 		if (line->elastic_tabs) {
-			if (line->elastic_tabs->columns_could_be_narrowed)
+			if (line->elastic_tabs->is_dirty)
 				recalc_elastic_columns(which_line);
-			else if (line->elastic_tabs->columns_could_be_widened)
-				widen_elastic_columns(which_line);
 			}
 		int cur_column_width = 0;
 		int which_column = 0;
@@ -1080,26 +1078,6 @@ TermWindow::SelectionPoint TermWindow::end_of_word(SelectionPoint point)
 }
 
 
-void TermWindow::widen_elastic_columns(int64_t initial_line)
-{
-	Line* line = history->line(initial_line);
-	if (line == nullptr || line->elastic_tabs == nullptr)
-		return;
-	ElasticTabs* elastic_tabs = line->elastic_tabs;
-
-	// Update from the dirty lines.
-	int64_t which_line = elastic_tabs->first_dirty_line;
-	if (which_line < history->get_first_line())
-		which_line = history->get_first_line();
-	int64_t last_line = elastic_tabs->last_dirty_line;
-	if (last_line < history->get_last_line())
-		last_line = history->get_last_line();
-	for (; which_line <= last_line; ++which_line)
-		update_elastic_columns_for(which_line);
-	elastic_tabs->undirtify();
-}
-
-
 void TermWindow::recalc_elastic_columns(int64_t initial_line)
 {
 	Line* line = history->line(initial_line);
@@ -1109,26 +1087,31 @@ void TermWindow::recalc_elastic_columns(int64_t initial_line)
 
 	// Recalculate from scratch using all lines in the group.
 	elastic_tabs->column_widths.clear();
-	int64_t which_line = elastic_tabs->first_line;
-	if (which_line < history->get_first_line()) {
-		elastic_tabs->first_line = history->get_first_line();
-		which_line = history->get_first_line();
+
+	// First, go backwards from initial_line.
+	int64_t which_line = initial_line;
+	for (; which_line >= history->get_first_line(); --which_line) {
+		Line* cur_line = history->line(which_line);
+		if (cur_line->elastic_tabs != elastic_tabs)
+			break;
+		update_elastic_columns_for(cur_line);
 		}
-	int64_t last_line = elastic_tabs->last_line;
-	if (last_line < history->get_last_line()) {
-		elastic_tabs->last_line = history->get_last_line();
-		last_line = history->get_last_line();
+
+	// Then go forward from the initial_line.
+	which_line = initial_line + 1;
+	for (; which_line <= history->get_last_line(); ++which_line) {
+		Line* cur_line = history->line(which_line);
+		if (cur_line->elastic_tabs != elastic_tabs)
+			break;
+		update_elastic_columns_for(cur_line);
 		}
-	for (; which_line <= last_line; ++which_line)
-		update_elastic_columns_for(which_line);
 
 	elastic_tabs->undirtify();
 }
 
 
-void TermWindow::update_elastic_columns_for(int64_t which_line)
+void TermWindow::update_elastic_columns_for(Line* line)
 {
-	Line* line = history->line(which_line);
 	if (line == nullptr || line->elastic_tabs == nullptr)
 		return;
 	ElasticTabs* elastic_tabs = line->elastic_tabs;

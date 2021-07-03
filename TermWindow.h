@@ -13,6 +13,7 @@
 
 class Terminal;
 class History;
+class Line;
 
 
 class TermWindow {
@@ -113,9 +114,8 @@ class TermWindow {
 		SelectionPoint	end_of_word(SelectionPoint point);
 
 		// Elastic tabs.
-		void	widen_elastic_columns(int64_t initial_line);
 		void	recalc_elastic_columns(int64_t initial_line);
-		void	update_elastic_columns_for(int64_t which_line);
+		void	update_elastic_columns_for(Line* line);
 	};
 
 

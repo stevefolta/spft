@@ -17,6 +17,8 @@ Line::~Line()
 {
 	for (auto& run: runs)
 		delete run;
+	if (elastic_tabs)
+		elastic_tabs->release();
 }
 
 

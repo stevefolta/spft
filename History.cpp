@@ -32,23 +32,12 @@ History::History() :
 
 History::~History()
 {
-	// Because of elastic tabs, we have to delete the lines in line-number order.
-	int64_t index = first_line_index;
-	int64_t ultimate_end = first_line + capacity;
-	for (int64_t which_line = first_line; which_line < ultimate_end; ++which_line) {
-		if (lines[index] && lines[index]->elastic_tabs) {
-			if (lines[index]->elastic_tabs->last_line == which_line)
-				delete lines[index]->elastic_tabs;
-			}
-
-		delete lines[index];
-
-		index += 1;
-		if (index >= capacity)
-			index = 0;
-		}
-
+	for (int i = 0; i < capacity; ++i)
+		delete lines[i];
 	delete[] lines;
+
+	if (current_elastic_tabs)
+		current_elastic_tabs->release();
 }
 
 
@@ -281,6 +270,8 @@ void History::new_line()
 	allocate_new_line();
 	current_line = last_line;
 	line(current_line)->elastic_tabs = current_elastic_tabs;
+	if (current_elastic_tabs)
+		current_elastic_tabs->acquire();
 	at_end_of_line = true;
 }
 
@@ -294,17 +285,7 @@ void History::allocate_new_line()
 		// from the bottom.)
 		int last_line_index = line_index(last_line);
 		Line* line = lines[last_line_index];
-		line->clear();
-		if (line->elastic_tabs) {
-			if (last_line_index == first_line_index) {
-				if (line->elastic_tabs->last_line == first_line) {
-					// This is the final line still referencing "elastic_tabs", so it's
-					// time to delete it.
-					delete line->elastic_tabs;
-					}
-				}
-			line->elastic_tabs = nullptr;
-			}
+		line->fully_clear();
 
 		// If we took "first_line", update that.
 		if (last_line_index == first_line_index) {
@@ -319,7 +300,7 @@ void History::allocate_new_line()
 		if (lines[last_line] == nullptr)
 			lines[last_line] = new Line();
 		else
-			lines[last_line]->clear();
+			lines[last_line]->fully_clear();
 		}
 }
 
@@ -936,7 +917,9 @@ void History::start_elastic_tabs()
 	end_elastic_tabs();
 
 	current_elastic_tabs = new ElasticTabs(current_line);
+	current_elastic_tabs->acquire();
 	line(current_line)->elastic_tabs = current_elastic_tabs;
+	current_elastic_tabs->acquire();
 }
 
 
@@ -947,9 +930,13 @@ void History::end_elastic_tabs()
 
 	// The current cursor line will not be part of the group of elastic tabbed
 	// lines.
-	current_elastic_tabs->last_line = current_line - 1;
+	Line* cur_line = line(current_line);
+	if (cur_line->elastic_tabs == current_elastic_tabs) {
+		current_elastic_tabs->release();
+		cur_line->elastic_tabs = nullptr;
+		}
+	current_elastic_tabs->release();
 	current_elastic_tabs = nullptr;
-	line(current_line)->elastic_tabs = nullptr;
 }
 
 
@@ -958,11 +945,7 @@ void History::characters_added()
 	if (current_elastic_tabs == nullptr)
 		return;
 
-	current_elastic_tabs->columns_could_be_widened = true;
-	if (current_elastic_tabs->first_dirty_line > current_line)
-		current_elastic_tabs->first_dirty_line = current_line;
-	if (current_elastic_tabs->last_dirty_line < current_line)
-		current_elastic_tabs->last_dirty_line = current_line;
+	current_elastic_tabs->is_dirty = true;
 }
 
 
@@ -971,11 +954,7 @@ void History::characters_deleted()
 	if (current_elastic_tabs == nullptr)
 		return;
 
-	current_elastic_tabs->columns_could_be_narrowed = true;
-	if (current_elastic_tabs->first_dirty_line > current_line)
-		current_elastic_tabs->first_dirty_line = current_line;
-	if (current_elastic_tabs->last_dirty_line < current_line)
-		current_elastic_tabs->last_dirty_line = current_line;
+	current_elastic_tabs->is_dirty = true;
 }
 
 

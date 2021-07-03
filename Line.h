@@ -2,11 +2,12 @@
 #define Line_h
 
 #include "Style.h"
+#include "ElasticTabs.h"
 #include <list>
 #include <string>
 
 class Run;
-class ElasticTabs;
+
 
 class Line {
 	public:
@@ -21,6 +22,13 @@ class Line {
 		void	append_tab(Style style);
 		void	replace_character_with_tab(int column, Style style);
 		void	clear();
+		void	fully_clear() {
+			clear();
+			if (elastic_tabs) {
+				elastic_tabs->release();
+				elastic_tabs = nullptr;
+				}
+			}
 		bool	empty()  {
 			return runs.empty();
 			}
