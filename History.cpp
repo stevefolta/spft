@@ -395,7 +395,9 @@ const char* History::parse_csi(const char* p, const char* end)
 
 		case 'B':
 		case 'E':
-			// Cursor down (CUD) / Cursor Next Line (CNL).
+		case 'e':
+			// Cursor down (CUD) / Cursor Next Line (CNL) / Line Position Relative
+			// (VPR).
 			{
 			current_line += args.args[0] ? args.args[0] : 1;
 			int64_t screen_bottom_line = calc_screen_bottom_line();
@@ -489,6 +491,39 @@ const char* History::parse_csi(const char* p, const char* end)
 			line(current_line)->delete_characters(current_column, args.args[0] ? args.args[0] : 1);
 			update_at_end_of_line();
 			characters_deleted();
+			break;
+
+		case 'X':
+			// Erase Character(s) (ECH).
+			// This appears to mean replacing them with spaces, unlike DCH which
+			// actually deletes characters.
+			{
+			int num_blanks = args.args[0] ? args.args[0] : 1;
+			std::string blanks(num_blanks, ' ');
+			line(current_line)->replace_characters(
+				current_column, blanks.data(), num_blanks, current_style);
+			at_end_of_line = false;
+			characters_deleted();
+			}
+			break;
+
+		case 'd':
+			// Line Position Absolute (VPA).
+			{
+			current_line =
+				calc_screen_top_line() + (args.args[0] ? args.args[0] - 1 : 0);
+			int64_t top_line = calc_screen_top_line();
+			if (current_line < top_line)
+				current_line = top_line;
+			else {
+				int64_t bottom_line = calc_screen_bottom_line();
+				if (current_line > bottom_line)
+					current_line = bottom_line;
+				}
+			ensure_current_line();
+			ensure_current_column();
+			update_at_end_of_line();
+			}
 			break;
 
 		case 'm':
