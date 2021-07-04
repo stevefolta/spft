@@ -5,7 +5,6 @@
 #include "Run.h"
 #include "Colors.h"
 #include "ElasticTabs.h"
-#include "Settings.h"
 #include "UTF8.h"
 #include <X11/cursorfont.h>
 #include <X11/Xatom.h>
@@ -13,6 +12,7 @@
 #include <stdexcept>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 
 
 TermWindow::TermWindow()
@@ -58,8 +58,10 @@ TermWindow::TermWindow()
 		display, xft_fonts[0],
 		(const FcChar8*) "M", 1,
 		&glyph_info);
-	width = columns * glyph_info.xOff * settings.average_character_width;
-	height = rows * xft_fonts[0]->height;
+	width =
+		ceil(columns * glyph_info.xOff * settings.average_character_width) +
+		2 * settings.border;
+	height = rows * xft_fonts[0]->height + 2 * settings.border;
 	if (geometry_bits & XNegative)
 		x += DisplayWidth(display, screen) - width - 2;
 	if (geometry_bits & YNegative)
@@ -281,7 +283,7 @@ void TermWindow::draw()
 	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
-	int y = xft_fonts[0]->ascent;
+	int y = settings.border + xft_fonts[0]->ascent;
 	int64_t current_line = history->get_current_line();
 	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
 		bool line_contains_cursor =
@@ -300,7 +302,7 @@ void TermWindow::draw()
 		int which_column = 0;
 
 		// Draw the runs in the line.
-		int x = 0;
+		int x = settings.border;
 		int chars_drawn = 0; 	// Only updated for the line with the cursor or a selection change on it.
 		int current_column = history->get_current_column();
 		for (auto run: *line) {
@@ -540,7 +542,7 @@ void TermWindow::set_title(const char* title)
 
 void TermWindow::screen_size_changed()
 {
-	int lines_on_screen = height / xft_fonts[0]->height;
+	int lines_on_screen = displayed_lines();
 
 	history->set_lines_on_screen(lines_on_screen);
 
@@ -551,7 +553,8 @@ void TermWindow::screen_size_changed()
 		(const FcChar8*) "M", 1,
 		&glyph_info);
 	terminal->notify_resize(
-		width / (glyph_info.xOff * settings.average_character_width),
+		(width - 2 * settings.border) /
+			(glyph_info.xOff * settings.average_character_width),
 		lines_on_screen,
 		width, height);
 }
@@ -698,14 +701,17 @@ void TermWindow::mouse_button_down(XButtonEvent* event)
 		int64_t last_line = effective_top_line + num_lines - 1;
 		if (last_line > history->get_last_line())
 			last_line = history->get_last_line();
-		selection_start.line = effective_top_line + event->y / xft_fonts[0]->height;
+		selection_start.line =
+			effective_top_line +
+			(event->y - settings.border) / xft_fonts[0]->height;
 		if (selection_start.line < effective_top_line)
 			selection_start.line = effective_top_line;
 		else if (selection_start.line > last_line)
 			selection_start.line = last_line;
 
 		// Which column?
-		selection_start.column = column_for_pixel(selection_start.line, event->x);
+		selection_start.column =
+			column_for_pixel(selection_start.line, event->x - settings.border);
 
 		// Set the new selection.
 		selection_end.line = selection_start.line;
@@ -749,12 +755,13 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 		return;
 
 	// Autoscroll.
-	if (event->y < 0) {
+	int y = event->y - settings.border;
+	if (y < 0) {
 		top_line = calc_effective_top_line() - 1;
 		if (top_line < history->get_first_line())
 			top_line = history->get_first_line();
 		}
-	else if (event->y > displayed_lines() * xft_fonts[0]->height) {
+	else if (y > displayed_lines() * xft_fonts[0]->height) {
 		int new_top_line = calc_effective_top_line() + 1;
 		if (new_top_line + displayed_lines() >= history->get_last_line())
 			scroll_to_bottom();
@@ -775,14 +782,15 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
-	mouse_position.line = effective_top_line + event->y / xft_fonts[0]->height;
+	mouse_position.line = effective_top_line + y / xft_fonts[0]->height;
 	if (mouse_position.line < effective_top_line)
 		mouse_position.line = effective_top_line;
 	else if (mouse_position.line > last_line)
 		mouse_position.line = last_line;
 
 	// Which column?
-	mouse_position.column = column_for_pixel(mouse_position.line, event->x);
+	mouse_position.column =
+		column_for_pixel(mouse_position.line, event->x - settings.border);
 
 	// Set the selection.
 	if (mouse_position < cur_selection_start) {

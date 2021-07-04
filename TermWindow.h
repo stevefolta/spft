@@ -5,6 +5,7 @@
 // of the same name.
 
 #include "Style.h"
+#include "Settings.h"
 #include <X11/Xlib.h>
 #include <X11/Xft/Xft.h>
 #include <string>
@@ -103,7 +104,7 @@ class TermWindow {
 		void	selection_requested(XSelectionRequestEvent* event);
 		void	property_changed(XEvent* event);
 		void	received_selection(XEvent* event);
-		int	displayed_lines() { return height / xft_fonts[0]->height; }
+		int	displayed_lines() { return (height - 2 * settings.border) / xft_fonts[0]->height; }
 		void	scroll_to_bottom() { top_line = -1; }
 
 		void	paste();

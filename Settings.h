@@ -19,6 +19,7 @@ struct Settings {
 	std::string working_directory;
 	uint32_t tab_width, column_separation;
 	std::string geometry;
+	uint32_t border;
 
 	void	read_settings_files();
 	void	read_settings_file(std::string path);

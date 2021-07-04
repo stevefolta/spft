@@ -68,7 +68,5 @@ What it still needs
 - More testing of character insertion and deletion scenarios?
 - Handle requests for big selections correctly.
 - Settable window class and other WM hints.
-- Borders for those who want them.
-- Better default window size.
 
 

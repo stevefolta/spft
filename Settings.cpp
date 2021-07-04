@@ -22,6 +22,7 @@ Settings settings = {
 	.tab_width = 24,
 	.column_separation = 20,
 	.geometry = "80x24",
+	.border = 0,
 	};
 
 
@@ -108,6 +109,8 @@ void SettingsParser::parse()
 					settings.column_separation = parse_uint32(value_token);
 				else if (setting_name == "geometry")
 					settings.geometry = unquote_string(value_token);
+				else if (setting_name == "border")
+					settings.border = parse_uint32(value_token);
 				else
 					fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
 				}
