@@ -40,6 +40,12 @@ int main(int argc, char* argv[])
 			settings.working_directory = args.front();
 			args.pop_front();
 			}
+		else if (arg == "-g" || arg == "geometry:") {
+			if (args.empty())
+				return usage();
+			settings.geometry = args.front();
+			args.pop_front();
+			}
 		else
 			return usage();
 		}

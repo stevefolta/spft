@@ -11,6 +11,10 @@ spft - simple proportional-font terminal
 .IR title ]
 .RB [ working-directory:
 .IR dir ]
+.RB [ \-g
+.IR geometry |
+.B geometry:
+.IR geometry ]
 .PP
 Keyword-style arguments can also be given with the traditional double-dash syntax
 (eg. "--title" instead of "title:").
@@ -78,6 +82,12 @@ The tab width for tab-stop (that is, non-elastic) tabs, in pixels.
 .TP
 .B column_separation
 The space between columns when using elastic tabs, in pixels.
+.TP
+.B geometry
+The window geometry, as per 
+.BR XParseGeometry (3).
+Note that the width and height units are (approximate) columns and lines, like
+other terminal programs, not pixels.
 
 
 .SH ELASTIC TABS

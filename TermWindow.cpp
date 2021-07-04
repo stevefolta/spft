@@ -34,6 +34,10 @@ TermWindow::TermWindow()
 	Visual* visual = XDefaultVisual(display, screen);
 	colors.init(display);
 
+	// Fonts.
+	// Lots of things depend on them, so set them up early.
+	setup_fonts();
+
 	attributes.background_pixel = WhitePixel(display, screen);
 	attributes.border_pixel = BlackPixel(display, screen);
 	attributes.bit_gravity = NorthWestGravity;
@@ -42,11 +46,24 @@ TermWindow::TermWindow()
 		ExposureMask | VisibilityChangeMask | StructureNotifyMask |
 		ButtonMotionMask | ButtonPressMask | ButtonReleaseMask;
 
-	//*** TODO
+	// Geometry.
 	int x = 0;
 	int y = 0;
-	width = 700;
-	height = 500;
+	unsigned int columns = 80;
+	unsigned int rows = 24;
+	int geometry_bits =
+		XParseGeometry(settings.geometry.c_str(), &x, &y, &columns, &rows);
+	XGlyphInfo glyph_info;
+	XftTextExtentsUtf8(
+		display, xft_fonts[0],
+		(const FcChar8*) "M", 1,
+		&glyph_info);
+	width = columns * glyph_info.xOff * settings.average_character_width;
+	height = rows * xft_fonts[0]->height;
+	if (geometry_bits & XNegative)
+		x += DisplayWidth(display, screen) - width - 2;
+	if (geometry_bits & YNegative)
+		y += DisplayHeight(display, screen) - height - 2;
 
 	Window root_window = XRootWindow(display, screen);
 	window =
@@ -61,9 +78,6 @@ TermWindow::TermWindow()
 	memset(&gc_values, 0, sizeof(gc_values));
 	gc_values.graphics_exposures = False;
 	gc = XCreateGC(display, root_window, GCGraphicsExposures, &gc_values);
-
-	// Fonts.
-	setup_fonts();
 
 	// Create pixmap, etc.
 	// Need to have the xft_fonts before we do this.
