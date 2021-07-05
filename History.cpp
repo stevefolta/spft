@@ -81,12 +81,14 @@ int History::add_input(const char* input, int length)
 	while (p < end) {
 		const char* run_start = p;
 		switch (*p++) {
-			case '\x7F':
-				// DEL.
-				//*** TODO
-#ifdef PRINT_UNIMPLEMENTED_ESCAPES
-				printf("- Unimplemented DEL.\n");
-#endif
+			case '\x7F': 	// DEL.
+			case '\x00': 	// NULL
+			case '\x05': 	// ENQ
+			case '\x11': 	// DC1 / XON
+			case '\x12': 	// DC2
+			case '\x13': 	// DC3 / XOFF
+			case '\x14': 	// DC4
+				// Ignore all of these.
 				break;
 
 			case '\x1B':
