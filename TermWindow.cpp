@@ -144,7 +144,6 @@ void TermWindow::setup_fonts()
 	XftDefaultSubstitute(display, screen, pattern);
 	FcPattern* match = FcFontMatch(NULL, pattern, &result);
 	xft_fonts[0] = XftFontOpenPattern(display, match);
-	FcPatternDestroy(match);
 	if (xft_fonts[0] == nullptr)
 		throw std::runtime_error("Couldn't open the font.");
 
@@ -154,7 +153,6 @@ void TermWindow::setup_fonts()
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
 	match = FcFontMatch(NULL, pattern, &result);
 	xft_fonts[2] = XftFontOpenPattern(display, match);
-	FcPatternDestroy(match);
 	if (xft_fonts[2] == nullptr) {
 		fprintf(stderr, "Couldn't open italic font.");
 		xft_fonts[2] = xft_fonts[0];
@@ -165,7 +163,6 @@ void TermWindow::setup_fonts()
 	FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
 	match = FcFontMatch(NULL, pattern, &result);
 	xft_fonts[3] = XftFontOpenPattern(display, match);
-	FcPatternDestroy(match);
 	if (xft_fonts[3] == nullptr) {
 		fprintf(stderr, "Couldn't open bold italic font.");
 		xft_fonts[3] = xft_fonts[0];
@@ -177,7 +174,6 @@ void TermWindow::setup_fonts()
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
 	match = FcFontMatch(NULL, pattern, &result);
 	xft_fonts[1] = XftFontOpenPattern(display, match);
-	FcPatternDestroy(match);
 	if (xft_fonts[1] == nullptr) {
 		fprintf(stderr, "Couldn't open bold font.");
 		xft_fonts[1] = xft_fonts[0];
