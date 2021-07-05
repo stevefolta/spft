@@ -479,13 +479,13 @@ const char* History::parse_csi(const char* p, const char* end)
 			}
 			break;
 
-		case 'L':
-			// Insert blank lines (IL).
+		case 'L': 	// Insert blank lines (IL).
+		case 'T': 	// Scroll down (SD).
 			insert_lines(args.args[0] ? args.args[0] : 1);
 			break;
 
-		case 'M':
-			// Delete lines (DL).
+		case 'M': 	// Delete lines (DL).
+		case 'S': 	// Scroll up (SU).
 			delete_lines(args.args[0] ? args.args[0] : 1);
 			break;
 
