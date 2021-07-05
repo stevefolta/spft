@@ -1104,8 +1104,10 @@ void TermWindow::recalc_elastic_columns(int64_t initial_line)
 		return;
 	ElasticTabs* elastic_tabs = line->elastic_tabs;
 
-	// Recalculate from scratch using all lines in the group.
-	elastic_tabs->column_widths.clear();
+	// Recalculate from scratch using all lines in the group, unless we only had
+	// added characters.
+	if (elastic_tabs->first_dirty_line == 0)
+		elastic_tabs->column_widths.clear();
 
 	// First, go backwards from initial_line.
 	int64_t which_line = initial_line;
