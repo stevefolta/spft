@@ -171,6 +171,9 @@ int History::add_input(const char* input, int length)
 							break;
 							}
 						}
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					printf("- Unimplemented escape: %.*s\n", (int) (p - run_start - 1), run_start + 1);
+#endif
 					}
 				break;
 
@@ -342,7 +345,7 @@ const char* History::parse_csi(const char* p, const char* end)
 	// after the escape sequence.
 
 	char c;
-#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+#if defined(PRINT_UNIMPLEMENTED_ESCAPES) || defined(DUMP_CSIS)
 	const char* escape_start = p;
 #endif
 
@@ -689,6 +692,9 @@ const char* History::parse_csi(const char* p, const char* end)
 			}
 		}
 
+#ifdef DUMP_CSIS
+	printf("- %.*s\n", (int) (p - escape_start), escape_start);
+#endif
 	return p;
 }
 
