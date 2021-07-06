@@ -81,6 +81,7 @@ class History {
 		void	clear_to_beginning_of_screen();
 		void	clear_screen();
 		void	insert_lines(int num_lines);
+		void	scroll_down(int num_lines, int64_t top_scroll_line);
 		void	delete_lines(int num_lines);
 		void	scroll_up(int64_t top_scroll_line, int64_t bottom_scroll_line, int num_lines);
 

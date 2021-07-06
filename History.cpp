@@ -482,13 +482,13 @@ const char* History::parse_csi(const char* p, const char* end)
 			}
 			break;
 
-		case 'L': 	// Insert blank lines (IL).
-		case 'T': 	// Scroll down (SD).
+		case 'L':
+			// Insert blank lines (IL).
 			insert_lines(args.args[0] ? args.args[0] : 1);
 			break;
 
-		case 'M': 	// Delete lines (DL).
-		case 'S': 	// Scroll up (SU).
+		case 'M':
+			// Delete lines (DL).
 			delete_lines(args.args[0] ? args.args[0] : 1);
 			break;
 
@@ -497,6 +497,27 @@ const char* History::parse_csi(const char* p, const char* end)
 			line(current_line)->delete_characters(current_column, args.args[0] ? args.args[0] : 1);
 			update_at_end_of_line();
 			characters_deleted();
+			break;
+
+		case 'S':
+			// Scroll up (SU).
+			// This scrolls the whole screen (or at least the scrolling region).
+			{
+			int effective_bottom_margin = bottom_margin;
+			if (effective_bottom_margin < 0)
+				effective_bottom_margin = lines_on_screen - 1;
+			int64_t top_line = calc_screen_top_line();
+			scroll_up(
+				top_line + top_margin, top_line + effective_bottom_margin,
+				args.args[0] ? args.args[0] : 1);
+			}
+			break;
+
+		case 'T':
+			// Scroll down (SD).
+			scroll_down(
+				args.args[0] ? args.args[0] : 1,
+				calc_screen_top_line() + top_margin);
 			break;
 
 		case 'X':
@@ -838,18 +859,25 @@ void History::clear_screen()
 
 void History::insert_lines(int num_lines)
 {
-	int64_t screen_top_line = calc_screen_top_line();
+	scroll_down(num_lines, current_line);
+}
+
+
+void History::scroll_down(int num_lines, int64_t top_scroll_line)
+{
 	int64_t bottom_scroll_line =
-		bottom_margin < 0 ? calc_screen_bottom_line() : screen_top_line + bottom_margin;
-	int max_scroll = bottom_scroll_line - current_line + 1;
+		bottom_margin < 0 ?
+		calc_screen_bottom_line() :
+		calc_screen_top_line() + bottom_margin;
+	int max_scroll = bottom_scroll_line - top_scroll_line + 1;
 	if (num_lines > max_scroll)
 		num_lines = max_scroll;
 
 	// Move and erase the lines.
-	for (int dest_line = bottom_scroll_line; dest_line >= current_line; --dest_line) {
+	for (int dest_line = bottom_scroll_line; dest_line >= top_scroll_line; --dest_line) {
 		int dest_index = line_index(dest_line);
 		int64_t src_line = dest_line - num_lines;
-		if (src_line < current_line) {
+		if (src_line < top_scroll_line) {
 			if (lines[dest_index])
 				lines[dest_index]->clear();
 			}

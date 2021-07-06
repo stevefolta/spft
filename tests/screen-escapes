@@ -26,6 +26,19 @@ def test_end(num_lines):
 	time.sleep(inter_test_time)
 	print_raw(f"{up(num_lines + 2)}{clear_to_eos}")
 
+def prefer_alt(test_name):
+	if not alt_screen:
+		print(f'It might be better to use "alt" for the {test_name} test.')
+		time.sleep(intra_test_time)
+		print_raw(f"{csi}H{csi}2J")
+
+def ten_lines():
+	print("=====")
+	for i in range(10):
+		print(i + 1)
+	print("=====")
+
+
 def clear_to_eos_test():
 	test_start("Clear to end of screen")
 	print(f"This text...")
@@ -33,6 +46,7 @@ def clear_to_eos_test():
 	time.sleep(intra_test_time)
 	print(f"{up(2)}{csi}J", end = '', flush = True)
 	test_end(0)
+
 
 def delete_lines_test():
 	test_start("Delete lines")
@@ -49,6 +63,49 @@ def delete_lines_test():
 		print_raw(f"{csi}4;6r{csi}M{csi}r")
 	test_end(1)
 
+
+def margined_newline_test():
+	prefer_alt('margined-newline')
+	test_start("Margined newline")
+	ten_lines()
+	print_raw(f"{csi}13;1H{csi}4;13r")
+	time.sleep(intra_test_time)
+	for i in range(4):
+		print_raw(f"\n- {i}")
+		time.sleep(intra_test_time)
+	for i in range(10):
+		print()
+	print_raw(f"{csi}4;1H")
+	for i in range(12):
+		print(i)
+		time.sleep(intra_test_time)
+	print_raw(f"{csi}r")
+	test_end(12)
+
+
+def full_screen_scroll_test():
+	test_start("Full screen scroll")
+	time.sleep(intra_test_time)
+	print_raw(f"{csi}T")
+	time.sleep(intra_test_time)
+	print_raw(f"{csi}S")
+	time.sleep(intra_test_time)
+	test_end(0)
+
+
+def margined_scroll_test():
+	prefer_alt("margined-scroll")
+	test_start("Margined scroll")
+	ten_lines()
+	time.sleep(intra_test_time)
+	print_raw(f"{csi}4;13r{csi}T")
+	time.sleep(intra_test_time)
+	print_raw(f"{csi}S")
+	time.sleep(intra_test_time)
+	print_raw(f"{csi}r")
+	test_end(12)
+
+
 def null_test():
 	test_start("Null")
 	test_end(0)
@@ -56,6 +113,9 @@ def null_test():
 tests = {
 	'clear-to-eos': clear_to_eos_test,
 	'delete-lines': delete_lines_test,
+	'margined-newline': margined_newline_test,
+	'full-screen-scroll': full_screen_scroll_test,
+	'margined-scroll': margined_scroll_test,
 	'null': null_test,
 	}
 
