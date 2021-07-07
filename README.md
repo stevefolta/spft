@@ -9,9 +9,9 @@ mlterm was the only X terminal program I'd found that properly supports
 proportional (that is, non-monospace) fonts.  There should be more than one...
 and now there is.  Also, they broke some of the behavior around the
 Shift-PageUp/Down keys in version 3.9.1.  It seems they wanted to make
-scrolling a "mode" now, which it hadn't been before, and they slipped this
-significant UI change and its associated breakage into a point-point release.
-That ticked me off enough to prompt me to write this.
+scrolling a "mode" now, which it hadn't really been before, and they slipped
+this significant UI change and its associated breakage into a point-point
+release.  That ticked me off enough to prompt me to write this.
 
 st is wonderfully simple in how it's coded.  It's a lot easier to find your way
 around its code than it is for mlterm.  It provided accessible examples of how
@@ -27,8 +27,8 @@ much less memory than mlterm, even when keeping much more scrollback history.
 Status
 -----
 
-It's pretty usable at this point, but perhaps not quite ready to take over from
-mlterm as your daily driver.
+It doesn't handle every escape sequence known to man, but it seems quite usable
+at this point.
 
 
 Elastic Tabs
