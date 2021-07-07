@@ -4,6 +4,7 @@
 #include "UTF8.h"
 #include "Terminal.h"
 #include "ElasticTabs.h"
+#include <sstream>
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 	#include <stdio.h>
 #endif
@@ -27,6 +28,7 @@ History::History() :
 	bottom_margin = -1;
 	alternate_screen_top_line = -1;
 	current_elastic_tabs = nullptr;
+	g0_character_set = 'B';
 }
 
 
@@ -159,7 +161,6 @@ int History::add_input(const char* input, int length)
 					}
 				else if (c >= 0x20 && c <= 0x2F) {
 					// "nF" escape sequence.
-					// Not currently implemented.
 					while (true) {
 						if (p >= end)
 							goto unfinished_run;
@@ -171,9 +172,21 @@ int History::add_input(const char* input, int length)
 							break;
 							}
 						}
+					run_start += 1;  // Skip the ESC.
+					switch (run_start[0]) {
+						case '(':
+							if (p > run_start + 1) {
+								g0_character_set = run_start[1];
+								current_style.line_drawing = (g0_character_set == '0');
+								}
+							break;
+
+						default:
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
-					printf("- Unimplemented escape: %.*s\n", (int) (p - run_start - 1), run_start + 1);
+							printf("- Unimplemented escape: %.*s\n", (int) (p - run_start), run_start);
 #endif
+							break;
+						}
 					}
 				break;
 
@@ -241,7 +254,15 @@ int History::add_input(const char* input, int length)
 					++p;
 					}
 				// Add to current line.
-				add_to_current_line(run_start, p);
+				if (g0_character_set == '0') {
+					// DEC Special Character and Line Drawing Set.
+					std::string translated_chars = translate_line_drawing_chars(run_start, p);
+					add_to_current_line(
+						translated_chars.data(),
+						translated_chars.data() + translated_chars.size());
+					}
+				else
+					add_to_current_line(run_start, p);
 				break;
 
 			unfinished_run:
@@ -564,6 +585,8 @@ const char* History::parse_csi(const char* p, const char* end)
 				switch (args.args[which_arg]) {
 					case 0:
 						current_style.reset();
+						if (g0_character_set == '0')
+							current_style.line_drawing = true;
 						break;
 					case 1:
 						current_style.bold = true;
@@ -1077,6 +1100,25 @@ const char* History::Arguments::parse(const char* p, const char* end)
 		num_args += 1;
 
 	return p;
+}
+
+
+std::string History::translate_line_drawing_chars(const char* start, const char* end)
+{
+	static const char* translation[] = {
+		"\u2518", "\u2510", "\u250C", "\u2514", "\u253C", "",
+		"", "\u2500", "", "", "\u251C", "\u2524", "\u2534", "\u252C", "\u2502",
+		};
+
+	std::stringstream result;
+	for (const char* p = start; p < end; ++p) {
+		char c = *p;
+		if (c >= 0x6A && c <= 0x78)
+			result << translation[c - 0x6A];
+		else
+			result << c;
+		}
+	return result.str();
 }
 
 

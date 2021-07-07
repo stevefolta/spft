@@ -2,6 +2,7 @@
 #define History_h
 
 #include "Style.h"
+#include <string>
 #include <stdint.h>
 
 class Line;
@@ -51,6 +52,7 @@ class History {
 		Terminal*	terminal;
 		int	top_margin, bottom_margin; 	// -1 bottom_margin means "bottom of screen"
 		int64_t	alternate_screen_top_line; 	// -1: not in alternate screen.
+		char g0_character_set;
 
 		// Saved during alternate screen.
 		int64_t	main_screen_current_line;
@@ -104,6 +106,8 @@ class History {
 
 			const char*	parse(const char* p, const char* end);
 			};
+
+		std::string	translate_line_drawing_chars(const char* start, const char* end);
 	};
 
 

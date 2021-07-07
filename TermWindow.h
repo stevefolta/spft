@@ -39,7 +39,7 @@ class TermWindow {
 		GC gc;
 		Drawable pixmap;
 		XftDraw* xft_draw;
-		XftFont* xft_fonts[4];
+		XftFont* xft_fonts[8];
 		unsigned int width, height;
 
 		int64_t top_line;
@@ -91,7 +91,7 @@ class TermWindow {
 			const KeyMapping* key_mappings, int num_key_mappings);
 
 		XftFont*	xft_font_for(const Style& style) {
-			return xft_fonts[style.italic << 1 | style.bold];
+			return xft_fonts[style.line_drawing << 2 | style.italic << 1 | style.bold];
 			}
 
 		void	setup_fonts();

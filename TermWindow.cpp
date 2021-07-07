@@ -169,7 +169,6 @@ void TermWindow::setup_fonts()
 		}
 
 	// Bold.
-	// (We do this first because we'll be clobbering the weight later.)
 	FcPatternDel(pattern, FC_SLANT);
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
 	match = FcFontMatch(NULL, pattern, &result);
@@ -180,11 +179,55 @@ void TermWindow::setup_fonts()
 		}
 
 	FcPatternDestroy(pattern);
+
+	// Line drawing fonts.
+	if (settings.line_drawing_font_spec.empty()) {
+		for (int i = 0; i < 4; ++i)
+			xft_fonts[i + 4] = xft_fonts[i];
+		}
+	else {
+		// Regular.
+		pattern =
+			FcNameParse((const FcChar8*) settings.line_drawing_font_spec.c_str());
+		XftDefaultSubstitute(display, screen, pattern);
+		FcPattern* match = FcFontMatch(NULL, pattern, &result);
+		xft_fonts[4] = XftFontOpenPattern(display, match);
+		if (xft_fonts[4] == nullptr) {
+			fprintf(stderr, "Couldn't open line-drawing font.");
+			xft_fonts[4] = xft_fonts[0];
+			}
+
+		// Bold.
+		FcPatternDel(pattern, FC_WEIGHT);
+		FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
+		match = FcFontMatch(NULL, pattern, &result);
+		xft_fonts[5] = XftFontOpenPattern(display, match);
+		if (xft_fonts[5] == nullptr) {
+			fprintf(stderr, "Couldn't open bold line-drawing font.");
+			xft_fonts[5] = xft_fonts[0];
+			}
+
+		// Don't bother with italic.
+		xft_fonts[6] = xft_fonts[4];
+		xft_fonts[7] = xft_fonts[5];
+
+		FcPatternDestroy(pattern);
+		}
 }
 
 
 void TermWindow::cleanup_fonts()
 {
+	// Line-drawing.
+	if (xft_fonts[5] != xft_fonts[4])
+		XftFontClose(display, xft_fonts[5]);
+	xft_fonts[5] = nullptr;
+	if (xft_fonts[4] != xft_fonts[0])
+		XftFontClose(display, xft_fonts[4]);
+	xft_fonts[4] = nullptr;
+	xft_fonts[6] = xft_fonts[7] = nullptr;
+
+	// Regular.
 	for (int i = 3; i >= 0; --i) {
 		if (i == 0 || xft_fonts[i] != xft_fonts[0])
 			XftFontClose(display, xft_fonts[i]);

@@ -11,6 +11,7 @@
 
 Settings settings = {
 	.font_spec = "Helvetica Neue,sans\\-serif-16.5:style=Light",
+	.line_drawing_font_spec = "",
 	.term_name = "xterm",
 	.default_foreground_color = 0,
 	.default_background_color = 15,
@@ -87,6 +88,8 @@ void SettingsParser::parse()
 			try {
 				if (setting_name == "font")
 					settings.font_spec = unquote_string(value_token);
+				else if (setting_name == "line_drawing_font")
+					settings.line_drawing_font_spec = unquote_string(value_token);
 				else if (setting_name == "term_name")
 					settings.term_name = unquote_string(value_token);
 				else if (setting_name == "default_foreground_color")

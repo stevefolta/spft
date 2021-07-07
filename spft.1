@@ -46,6 +46,11 @@ For settings that use a string value, the string must be enclosed in double or s
 A string representing the font to use, in the FontConfig format.  See
 <https://www.freedesktop.org/software/fontconfig/fontconfig-user.html#AEN36>.
 .TP
+.B line_drawing_font
+If this is set (not empty), it's a string representing the font to use for the
+DEC Line Drawing characters.  You can set this if your main font doesn't
+include the Unicode box-drawing characters.
+.TP
 .B default_foreground_color, default_background_color
 Numbers representing these colors.  Small numbers are ANSI colors, so if you
 want to change to a dark theme, you can use \(lqdefault_foreground_color = 15,
