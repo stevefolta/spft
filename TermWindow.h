@@ -106,6 +106,7 @@ class TermWindow {
 		void	received_selection(XEvent* event);
 		int	displayed_lines() { return (height - 2 * settings.border) / xft_fonts[0]->height; }
 		void	scroll_to_bottom() { top_line = -1; }
+		void	decorate_run(Style style, int x, int width, int y);
 
 		void	paste();
 

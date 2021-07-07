@@ -26,6 +26,7 @@ print(f'foo{csi}Cbar')
 print(f'foo xar{csi}D{csi}D{csi}Db')
 print(f'{greenback}foo {greyback}bar{reset}')
 print(f'normal {csi}1mbold{csi}22m {csi}3mitalic{csi}23m {csi}1;3mbold italic{reset}')
+print(f'normal {csi}8minvisible{csi}28m {csi}21mdoubly{csi}24;4m-underlined{csi}24m {csi}9mcrossed-out{csi}29m')
 
 print()
 

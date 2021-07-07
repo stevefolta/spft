@@ -619,8 +619,20 @@ const char* History::parse_csi(const char* p, const char* end)
 					case 3:
 						current_style.italic = true;
 						break;
+					case 4:
+						current_style.underlined = true;
+						break;
 					case 7:
 						current_style.inverse = true;
+						break;
+					case 8:
+						current_style.invisible = true;
+						break;
+					case 9:
+						current_style.crossed_out = true;
+						break;
+					case 21:
+						current_style.doubly_underlined = true;
 						break;
 					case 22:
 						current_style.bold = false;
@@ -628,8 +640,17 @@ const char* History::parse_csi(const char* p, const char* end)
 					case 23:
 						current_style.italic = false;
 						break;
+					case 24:
+						current_style.underlined = current_style.doubly_underlined = false;
+						break;
 					case 27:
 						current_style.inverse = false;
+						break;
+					case 28:
+						current_style.invisible = false;
+						break;
+					case 29:
+						current_style.crossed_out = false;
 						break;
 					case 30: case 31: case 32: case 33:
 					case 34: case 35: case 36: case 37:

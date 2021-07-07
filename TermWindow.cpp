@@ -38,7 +38,8 @@ TermWindow::TermWindow()
 	// Lots of things depend on them, so set them up early.
 	setup_fonts();
 
-	attributes.background_pixel = WhitePixel(display, screen);
+	attributes.background_pixel =
+		colors.xft_color(settings.default_background_color)->pixel;
 	attributes.border_pixel = BlackPixel(display, screen);
 	attributes.bit_gravity = NorthWestGravity;
 	attributes.event_mask =
@@ -439,12 +440,18 @@ void TermWindow::draw()
 					}
 
 				// Draw the run text.
-				XftDrawStringUtf8(
-					xft_draw,
-					colors.xft_color(inversity? background_color : foreground_color),
-					xft_font,
-					x, y,
-					(const FcChar8*) run->bytes(), num_bytes);
+				if (!run->style.invisible) {
+					XftDrawStringUtf8(
+						xft_draw,
+						colors.xft_color(inversity? background_color : foreground_color),
+						xft_font,
+						x, y,
+						(const FcChar8*) run->bytes(), num_bytes);
+					}
+
+				// Decorations.
+				if (run->style.has_decorations())
+					decorate_run(run->style, x, glyph_info.xOff, y);
 
 				x += glyph_info.xOff; 	// Not "width".  It'd be nice if Xft were documented...
 				cur_column_width += glyph_info.xOff;
@@ -501,11 +508,17 @@ void TermWindow::draw()
 						subrun_width, xft_fonts[0]->height);
 
 					// Characters.
-					uint32_t cur_foreground = (inversity ? background_color : foreground_color);
-					XftDrawStringUtf8(
-						xft_draw, colors.xft_color(cur_foreground), xft_font,
-						x, y,
-						(const FcChar8*) subrun_start_byte, subrun_num_bytes);
+					if (!run->style.invisible) {
+						uint32_t cur_foreground = (inversity ? background_color : foreground_color);
+						XftDrawStringUtf8(
+							xft_draw, colors.xft_color(cur_foreground), xft_font,
+							x, y,
+							(const FcChar8*) subrun_start_byte, subrun_num_bytes);
+						}
+
+					// Decorations.
+					if (run->style.has_decorations())
+						decorate_run(run->style, x, glyph_info.xOff, y);
 
 					chars_drawn += subrun_num_chars;
 					subrun_start_byte += subrun_num_bytes;
@@ -539,6 +552,23 @@ void TermWindow::draw()
 	XCopyArea(
 		display, pixmap, window, gc, 0, 0, width, height, 0, 0);
 	XFlush(display);
+}
+
+
+void TermWindow::decorate_run(Style style, int x, int width, int y)
+{
+	XSetForeground(
+		display, gc, colors.xft_color(settings.default_foreground_color)->pixel);
+	int x2 = x + width - 1;
+	if (style.underlined || style.doubly_underlined) {
+		XDrawLine(display, pixmap, gc, x, y + 1, x2, y + 1);
+		if (style.doubly_underlined)
+			XDrawLine(display, pixmap, gc, x, y + 3, x2, y + 3);
+		}
+	if (style.crossed_out) {
+		int cross_y = y - xft_fonts[0]->ascent / 3;
+		XDrawLine(display, pixmap, gc, x, cross_y, x2, cross_y);
+		}
 }
 
 
