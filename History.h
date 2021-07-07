@@ -53,6 +53,7 @@ class History {
 		int	top_margin, bottom_margin; 	// -1 bottom_margin means "bottom of screen"
 		int64_t	alternate_screen_top_line; 	// -1: not in alternate screen.
 		char g0_character_set;
+		bool insert_mode;
 
 		// Saved during alternate screen.
 		int64_t	main_screen_current_line;

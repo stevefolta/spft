@@ -65,7 +65,6 @@ What it still needs
 -----
 
 - More escape sequences.
-- More testing of character insertion and deletion scenarios?
 - Handle requests for big selections correctly.
 - Settable window class and other WM hints.
 

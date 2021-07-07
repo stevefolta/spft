@@ -29,6 +29,7 @@ History::History() :
 	alternate_screen_top_line = -1;
 	current_elastic_tabs = nullptr;
 	g0_character_set = 'B';
+	insert_mode = false;
 }
 
 
@@ -280,6 +281,10 @@ void History::add_to_current_line(const char* start, const char* end)
 	Line* cur_line = line(current_line);
 	if (at_end_of_line)
 		cur_line->append_characters(start, end - start, current_style);
+	else if (insert_mode) {
+		cur_line->insert_characters(
+			current_column, start, end - start, current_style);
+		}
 	else {
 		cur_line->replace_characters(
 			current_column, start, end - start, current_style);
@@ -572,6 +577,26 @@ const char* History::parse_csi(const char* p, const char* end)
 			ensure_current_column();
 			update_at_end_of_line();
 			}
+			break;
+
+		case 'h':
+			switch (args.args[0]) {
+				case 4:
+					insert_mode = true;
+					break;
+				default:
+					goto unimplemented;
+				}
+			break;
+
+		case 'l':
+			switch (args.args[0]) {
+				case 4:
+					insert_mode = false;
+					break;
+				default:
+					goto unimplemented;
+				}
 			break;
 
 		case 'm':

@@ -60,6 +60,12 @@ print(f"fooXbar{csi}4G{csi}X")
 
 print()
 
+# Insert mode.
+print("Insert mode:")
+print(f"{csi}4hf bar{csi}2Goo{csi}4l")
+
+print()
+
 # Tests of Line::delete_characters().
 print("delete_characters():")
 # Deleting multiple runs.
