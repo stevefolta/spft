@@ -73,6 +73,9 @@ class TermWindow {
 		int	selecting_by;
 		struct timespec	last_click_time;
 		std::string selected_text;
+		void	clear_selection() {
+			selection_start.line = selection_end.line = -1;
+			}
 
 		Atom wm_delete_window_atom;
 		Atom wm_name_atom;

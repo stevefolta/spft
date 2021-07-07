@@ -262,6 +262,8 @@ void TermWindow::tick()
 
 		if (FD_ISSET(terminal_fd, &fds)) {
 			terminal->tick();
+			if (selecting_state == NotSelecting)
+				clear_selection();
 			draw();
 			}
 		}
