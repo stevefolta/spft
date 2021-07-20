@@ -417,8 +417,14 @@ const char* History::parse_csi(const char* p, const char* end)
 			{
 			current_line -= args.args[0] ? args.args[0] : 1;
 			int64_t screen_top_line = calc_screen_top_line();
-			if (current_line < screen_top_line)
-				current_line = screen_top_line;
+			if (is_in_alternate_screen()) {
+				if (current_line < screen_top_line)
+					current_line = screen_top_line;
+				}
+			else {
+				if (current_line < first_line)
+					current_line = first_line;
+				}
 			if (c == 'F')
 				current_column = 0;
 			update_at_end_of_line();
