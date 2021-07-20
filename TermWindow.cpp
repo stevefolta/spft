@@ -637,7 +637,7 @@ void TermWindow::key_down(XKeyEvent* event)
 	KeySym keySym = 0;
 	int length = XLookupString(event, buffer, sizeof(buffer), &keySym, NULL);
 
-	// Shift-PgUp/PgDown/Break.
+	// Shift-PgUp/PgDown/Insert.
 	if ((event->state & ShiftMask) != 0) {
 		int64_t num_lines = displayed_lines();
 		int64_t half_page = num_lines / 2 + 1;
