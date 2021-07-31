@@ -144,6 +144,11 @@ void TermWindow::setup_fonts()
 		FcNameParse((const FcChar8*) settings.font_spec.c_str());
 	XftDefaultSubstitute(display, screen, pattern);
 	FcPattern* match = FcFontMatch(NULL, pattern, &result);
+#ifdef SHOW_REAL_FONT
+	FcChar8* format_name = FcPatternFormat(match, (FcChar8*) "%{=fcmatch}");
+	printf("Real font: \"%s\".\n", format_name);
+	free(format_name);
+#endif
 	xft_fonts[0] = XftFontOpenPattern(display, match);
 	if (xft_fonts[0] == nullptr)
 		throw std::runtime_error("Couldn't open the font.");
