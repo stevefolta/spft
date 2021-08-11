@@ -211,6 +211,9 @@ int History::add_input(const char* input, int length)
 					new_line();
 				else {
 					current_line += 1;
+					line(current_line)->elastic_tabs = current_elastic_tabs;
+					if (current_elastic_tabs)
+						current_elastic_tabs->acquire();
 					update_at_end_of_line();
 					}
 				}
