@@ -211,7 +211,10 @@ int History::add_input(const char* input, int length)
 					new_line();
 				else {
 					current_line += 1;
-					line(current_line)->elastic_tabs = current_elastic_tabs;
+					Line* cur_line = line(current_line);
+					if (cur_line->elastic_tabs)
+						cur_line->elastic_tabs->release();
+					cur_line->elastic_tabs = current_elastic_tabs;
 					if (current_elastic_tabs)
 						current_elastic_tabs->acquire();
 					update_at_end_of_line();
@@ -1068,7 +1071,10 @@ void History::start_elastic_tabs()
 
 	current_elastic_tabs = new ElasticTabs(current_line);
 	current_elastic_tabs->acquire();
-	line(current_line)->elastic_tabs = current_elastic_tabs;
+	Line* cur_line = line(current_line);
+	if (cur_line->elastic_tabs)
+		cur_line->elastic_tabs->release();
+	cur_line->elastic_tabs = current_elastic_tabs;
 	current_elastic_tabs->acquire();
 }
 
