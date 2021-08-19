@@ -20,6 +20,7 @@ class History {
 		void	set_terminal(Terminal* new_terminal) { terminal = new_terminal; }
 
 		void	set_lines_on_screen(int new_lines_on_screen);
+		void	set_characters_per_line(int new_characters_per_line);
 
 		int64_t	num_lines();
 		Line*	line(int64_t which_line) {
@@ -38,7 +39,7 @@ class History {
 		bool	use_bracketed_paste;
 		bool	application_cursor_keys;
 
-	private:
+	protected:
 		Style	current_style;
 		bool	at_end_of_line;
 		// Lines are numbered from the beginning of the session; line numbers are
@@ -46,7 +47,7 @@ class History {
 		// is the index of "first_line" within the "lines" array.
 		int64_t	capacity, first_line, first_line_index, last_line;
 		int64_t	current_line;
-		int	lines_on_screen;
+		int	lines_on_screen, characters_per_line;
 		int	current_column;
 		Line**	lines;
 		Terminal*	terminal;
@@ -54,6 +55,7 @@ class History {
 		int64_t	alternate_screen_top_line; 	// -1: not in alternate screen.
 		char g0_character_set;
 		bool insert_mode;
+		bool auto_wrap;
 
 		// Saved during alternate screen.
 		int64_t	main_screen_current_line;
@@ -64,7 +66,9 @@ class History {
 			return (first_line_index + (which_line - first_line)) % capacity;
 			}
 
+		void	add_characters(const char* start, const char* end);
 		void	add_to_current_line(const char* start, const char* end);
+		void	next_line();
 		void	new_line();
 		void	allocate_new_line();
 		void	ensure_current_line();

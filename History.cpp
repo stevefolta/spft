@@ -30,6 +30,8 @@ History::History() :
 	current_elastic_tabs = nullptr;
 	g0_character_set = 'B';
 	insert_mode = false;
+	auto_wrap = settings.default_auto_wrap;
+	characters_per_line = 80;
 }
 
 
@@ -66,6 +68,12 @@ void History::set_lines_on_screen(int new_lines_on_screen)
 		}
 
 	lines_on_screen = new_lines_on_screen;
+}
+
+
+void History::set_characters_per_line(int new_characters_per_line)
+{
+	characters_per_line = new_characters_per_line;
 }
 
 
@@ -197,29 +205,7 @@ int History::add_input(const char* input, int length)
 				break;
 
 			case '\n':
-				{
-				bool needs_scroll =
-					(top_margin > 0 && current_line >= last_line) ||
-					(bottom_margin >= 0 &&
-					 current_line == calc_screen_top_line() + bottom_margin);
-				if (needs_scroll) {
-					int64_t screen_top = calc_screen_top_line();
-					scroll_up(screen_top + top_margin, screen_top + bottom_margin, 1);
-					update_at_end_of_line();
-					}
-				else if (current_line >= last_line)
-					new_line();
-				else {
-					current_line += 1;
-					Line* cur_line = line(current_line);
-					if (cur_line->elastic_tabs)
-						cur_line->elastic_tabs->release();
-					cur_line->elastic_tabs = current_elastic_tabs;
-					if (current_elastic_tabs)
-						current_elastic_tabs->acquire();
-					update_at_end_of_line();
-					}
-				}
+				next_line();
 				break;
 
 			case '\b':
@@ -264,12 +250,12 @@ int History::add_input(const char* input, int length)
 				if (g0_character_set == '0') {
 					// DEC Special Character and Line Drawing Set.
 					std::string translated_chars = translate_line_drawing_chars(run_start, p);
-					add_to_current_line(
+					add_characters(
 						translated_chars.data(),
 						translated_chars.data() + translated_chars.size());
 					}
 				else
-					add_to_current_line(run_start, p);
+					add_characters(run_start, p);
 				break;
 
 			unfinished_run:
@@ -279,6 +265,36 @@ int History::add_input(const char* input, int length)
 		}
 
 	return p - input;
+}
+
+
+void History::add_characters(const char* start, const char* end)
+{
+	if (auto_wrap) {
+		int num_new_characters = UTF8::num_characters(start, end - start);
+		while (current_column + num_new_characters > characters_per_line) {
+			int chars_to_add = characters_per_line - current_column;
+			if (at_end_of_line || !insert_mode) {
+				int num_bytes = UTF8::bytes_for_n_characters(start, end - start, chars_to_add);
+				add_to_current_line(start, start + num_bytes);
+				start += num_bytes;
+				next_line();
+				current_column = 0;
+				update_at_end_of_line();
+				num_new_characters -= chars_to_add;
+				}
+			else {
+				// In insert mode.
+				// TODO: split the line.
+				// Instead, for now, we just insert the characters.
+				add_to_current_line(start, end);
+				return;
+				}
+			}
+		}
+
+	if (end > start)
+		add_to_current_line(start, end);
 }
 
 
@@ -299,6 +315,32 @@ void History::add_to_current_line(const char* start, const char* end)
 	characters_added();
 	if (!at_end_of_line)
 		update_at_end_of_line();
+}
+
+
+void History::next_line()
+{
+	bool needs_scroll =
+		(top_margin > 0 && current_line >= last_line) ||
+		(bottom_margin >= 0 &&
+		 current_line == calc_screen_top_line() + bottom_margin);
+	if (needs_scroll) {
+		int64_t screen_top = calc_screen_top_line();
+		scroll_up(screen_top + top_margin, screen_top + bottom_margin, 1);
+		update_at_end_of_line();
+		}
+	else if (current_line >= last_line)
+		new_line();
+	else {
+		current_line += 1;
+		Line* cur_line = line(current_line);
+		if (cur_line->elastic_tabs)
+			cur_line->elastic_tabs->release();
+		cur_line->elastic_tabs = current_elastic_tabs;
+		if (current_elastic_tabs)
+			current_elastic_tabs->acquire();
+		update_at_end_of_line();
+		}
 }
 
 
@@ -856,6 +898,10 @@ bool History::set_private_mode(int mode, bool set)
 		case 1:
 			// DECCKM.
 			application_cursor_keys = set;
+			break;
+
+		case 7:
+			auto_wrap = set;
 			break;
 
 		case 12:

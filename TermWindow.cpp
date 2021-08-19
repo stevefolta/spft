@@ -618,20 +618,22 @@ void TermWindow::set_title(const char* title)
 
 void TermWindow::screen_size_changed()
 {
-	int lines_on_screen = displayed_lines();
-
-	history->set_lines_on_screen(lines_on_screen);
-
-	// Notify the terminal.
 	XGlyphInfo glyph_info;
 	XftTextExtentsUtf8(
 		display, xft_fonts[0],
 		(const FcChar8*) "M", 1,
 		&glyph_info);
-	terminal->notify_resize(
+	int lines_on_screen = displayed_lines();
+	int characters_per_line =
 		(width - 2 * settings.border) /
-			(glyph_info.xOff * settings.average_character_width),
-		lines_on_screen,
+		(glyph_info.xOff * settings.average_character_width);
+
+	history->set_lines_on_screen(lines_on_screen);
+	history->set_characters_per_line(characters_per_line);
+
+	// Notify the terminal.
+	terminal->notify_resize(
+		characters_per_line, lines_on_screen,
 		width, height);
 }
 

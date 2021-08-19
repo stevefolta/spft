@@ -41,6 +41,7 @@ series of settings, in the form
 .IR value \(rq.
 These settings can optionally be separated by commas or semicolons, but this is not necessary.
 For settings that use a string value, the string must be enclosed in double or single quotes.
+For settings that use a boolean value, the setting must be either "true" or "false" (without quotes).
 .TP
 .B font
 A string representing the font to use, in the FontConfig format.  See
@@ -96,6 +97,9 @@ other terminal programs, not pixels.
 .TP
 .B border
 The window border (if any), in pixels.
+.TP
+.B default_auto_wrap
+A boolean indicating whether "auto-wrap" defaults to being on or off.
 
 
 .SH ELASTIC TABS

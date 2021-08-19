@@ -24,6 +24,7 @@ Settings settings = {
 	.column_separation = 20,
 	.geometry = "80x24",
 	.border = 0,
+	.default_auto_wrap = true,
 	};
 
 
@@ -50,6 +51,7 @@ class SettingsParser {
 		std::string	unquote_string(std::string token);
 		uint32_t	parse_uint32(std::string token);
 		float	parse_float(std::string token);
+		bool	parse_bool(std::string token);
 	};
 
 
@@ -114,6 +116,8 @@ void SettingsParser::parse()
 					settings.geometry = unquote_string(value_token);
 				else if (setting_name == "border")
 					settings.border = parse_uint32(value_token);
+				else if (setting_name == "default_auto_wrap")
+					settings.default_auto_wrap = parse_bool(value_token);
 				else
 					fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
 				}
@@ -258,6 +262,16 @@ float SettingsParser::parse_float(std::string token)
 	if (*end_ptr != 0)
 		throw parse_error("Not a floating-point number: " + token);
 	return result;
+}
+
+
+bool SettingsParser::parse_bool(std::string token)
+{
+	if (token == "true")
+		return true;
+	else if (token == "false")
+		return false;
+	throw parse_error("Not a boolean: " + token);
 }
 
 
