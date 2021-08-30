@@ -94,6 +94,7 @@ for arg in sys.argv[1:]:
 	if arg[0:2] != "--" and arg[0] == "-":
 		if "l" in arg:
 			long_output = True
+			first_line_summary = True
 		if "s" in arg:
 			first_line_summary = True
 	ls_args.append(arg)
@@ -114,14 +115,22 @@ print(result.stderr, file = sys.stderr, end = '', flush = True)
 
 if long_output:
 	long_re = re.compile('([\w-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\S+)\s+(\w+\s+\d+\s+[\d:]+)\s+([^\r\n]+)')
-	print("\x1B[?5001h", end = '')
-	for line in result.stdout.splitlines():
-		match = long_re.match(line)
-		if match:
-			print('\t'.join(match.groups()))
-		else:
-			print(line.strip())
-	print("\x1B[?5001l", end = '')
+	try:
+		filenames = result.stdout.splitlines()
+		if first_line_summary and len(filenames) > 0:
+			print(filenames[0])
+			filenames = filenames[1:]
+		print("\x1B[?5001h", end = '')
+		for line in filenames:
+			match = long_re.match(line)
+			if match:
+				print('\t'.join(match.groups()))
+			else:
+				print(line.strip())
+		print("\x1B[?5001l", end = '')
+	except BrokenPipeError:
+		# We can't do anything about BrokenPipeError; just be quiet about it.
+		pass
 else:
 	filenames = result.stdout.splitlines()
 	if first_line_summary and len(filenames) > 0:
@@ -135,7 +144,11 @@ else:
 			print(line)
 		else:
 			cur_filenames.append(line)
-	columnate(cur_filenames)
+	try:
+		columnate(cur_filenames)
+	except BrokenPipeError:
+		# We can't do anything about BrokenPipeError; just be quiet about it.
+		pass
 
 sys.exit(result.returncode)
 

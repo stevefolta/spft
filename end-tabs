@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# This is useful when piping "els" through other programs (like "head").
+# Include this at the end of the pipe to ensure that the elastic tabs line
+# group is terminated.
+# Eg.:
+# 	els | head | end-tabs
+
+cat
+echo -en "\x1B[?5001l"
+
