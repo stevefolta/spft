@@ -19,6 +19,7 @@ struct Settings {
 	std::string window_title;
 	std::string working_directory;
 	uint32_t tab_width, column_separation;
+	uint32_t synthetic_tab_spaces;
 	std::string geometry;
 	uint32_t border;
 	bool default_auto_wrap;

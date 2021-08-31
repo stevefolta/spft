@@ -22,6 +22,7 @@ Settings settings = {
 	.window_title = "spft",
 	.tab_width = 24,
 	.column_separation = 20,
+	.synthetic_tab_spaces = 0,
 	.geometry = "80x24",
 	.border = 0,
 	.default_auto_wrap = true,
@@ -112,6 +113,8 @@ void SettingsParser::parse()
 					settings.tab_width = parse_uint32(value_token);
 				else if (setting_name == "column_separation")
 					settings.column_separation = parse_uint32(value_token);
+				else if (setting_name == "synthetic_tab_spaces")
+					settings.synthetic_tab_spaces = parse_uint32(value_token);
 				else if (setting_name == "geometry")
 					settings.geometry = unquote_string(value_token);
 				else if (setting_name == "border")

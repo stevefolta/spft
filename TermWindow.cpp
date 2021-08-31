@@ -349,6 +349,8 @@ void TermWindow::draw()
 		int x = settings.border;
 		int chars_drawn = 0; 	// Only updated for the line with the cursor or a selection change on it.
 		int current_column = history->get_current_column();
+		bool in_initial_spaces = settings.synthetic_tab_spaces > 0;
+		int initial_spaces_drawn = 0;
 		for (auto run: *line) {
 			int num_bytes = strlen(run->bytes());
 			XGlyphInfo glyph_info;
@@ -397,6 +399,7 @@ void TermWindow::draw()
 				// Start the next column.
 				which_column += 1;
 				cur_column_width = 0;
+				in_initial_spaces = false;
 
 				continue;
 				}
@@ -409,24 +412,42 @@ void TermWindow::draw()
 			int run_end_char = chars_drawn + run_chars;
 			const char* subrun_start_byte = run->bytes();
 			while (chars_drawn < run_end_char) {
-				int next_flip = run_end_char;
+				// Where does the subrun end?
+				int subrun_end_char = run_end_char;
+				// It might end at the cursor.
 				if (line_contains_cursor) {
 					if (current_column == chars_drawn)
-						next_flip = current_column + 1;
+						subrun_end_char = current_column + 1;
 					else if (current_column > chars_drawn && current_column < run_end_char)
-						next_flip = current_column;
+						subrun_end_char = current_column;
 					}
+				// It might end at the selection start or end.
 				if (which_line == selection_start.line) {
-					if (selection_start.column > chars_drawn && selection_start.column < next_flip)
-						next_flip = selection_start.column;
+					if (selection_start.column > chars_drawn && selection_start.column < subrun_end_char)
+						subrun_end_char = selection_start.column;
 					}
 				if (which_line == selection_end.line) {
-					if (selection_end.column > chars_drawn && selection_end.column < next_flip)
-						next_flip = selection_end.column;
+					if (selection_end.column > chars_drawn && selection_end.column < subrun_end_char)
+						subrun_end_char = selection_end.column;
+					}
+				// It might be part of the initial spaces, and be treated as part of
+				// synthetic tabs.
+				int subrun_initial_spaces = 0;
+				if (in_initial_spaces) {
+					const char* subrun_end = subrun_start_byte + (subrun_end_char - chars_drawn);
+					for (const char* p = subrun_start_byte; p < subrun_end; ++p) {
+						if (*p != ' ')
+							break;
+						subrun_initial_spaces += 1;
+						}
+					if (subrun_initial_spaces > 0)
+						subrun_end_char = chars_drawn + subrun_initial_spaces;
+					else
+						in_initial_spaces = false;
 					}
 
 				// Figure out the subrun.
-				int subrun_num_chars = next_flip - chars_drawn;
+				int subrun_num_chars = subrun_end_char - chars_drawn;
 				int subrun_num_bytes =
 					UTF8::bytes_for_n_characters(
 						subrun_start_byte,
@@ -437,6 +458,26 @@ void TermWindow::draw()
 					(const FcChar8*) subrun_start_byte, subrun_num_bytes,
 					&glyph_info);
 				int subrun_width = glyph_info.xOff;
+
+				// Handle synthetic tabs.
+				if (in_initial_spaces) {
+					int width_drawn = x - settings.border;
+					int num_spaces = initial_spaces_drawn + subrun_initial_spaces;
+					int width_needed =
+						(num_spaces / settings.synthetic_tab_spaces) *
+						settings.tab_width;
+					if (num_spaces % settings.synthetic_tab_spaces != 0) {
+						XftTextExtentsUtf8(
+							display, xft_font,
+							(const FcChar8*) " ", 1,
+							&glyph_info);
+						width_needed +=
+							(num_spaces % settings.synthetic_tab_spaces) * glyph_info.xOff;
+						}
+					if (width_needed > width_drawn + subrun_width)
+						subrun_width = width_needed - width_drawn;
+					initial_spaces_drawn += subrun_initial_spaces;
+					}
 
 				SelectionPoint draw_point(which_line, chars_drawn);
 				bool inversity =
@@ -461,7 +502,7 @@ void TermWindow::draw()
 
 				// Decorations.
 				if (run->style.has_decorations())
-					decorate_run(run->style, x, glyph_info.xOff, y);
+					decorate_run(run->style, x, subrun_width, y);
 
 				chars_drawn += subrun_num_chars;
 				subrun_start_byte += subrun_num_bytes;
