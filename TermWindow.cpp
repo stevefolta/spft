@@ -1045,6 +1045,7 @@ int TermWindow::column_for_pixel(int64_t which_line, int x)
 	int which_column = 0;
 	XGlyphInfo glyph_info;
 	int initial_x = x;
+	bool in_initial_spaces = settings.synthetic_tab_spaces > 0;
 	for (auto run: *line) {
 		// Tab.
 		if (run->is_tab) {
@@ -1074,6 +1075,7 @@ int TermWindow::column_for_pixel(int64_t which_line, int x)
 			which_column += 1;
 			cur_column_width = 0;
 
+			in_initial_spaces = false;
 			continue;
 			}
 
@@ -1084,10 +1086,26 @@ int TermWindow::column_for_pixel(int64_t which_line, int x)
 			XftTextExtentsUtf8(
 				display, xft_font_for(run->style),
 				(const FcChar8*) p, char_num_bytes, &glyph_info);
-			if (x < glyph_info.xOff / 2)
+			int char_width = glyph_info.xOff;
+
+			// Handle synthetic tabs.
+			if (in_initial_spaces) {
+				if (*p == ' ') {
+					int width_handled = initial_x - x;
+					int width_needed =
+						((column + 1) / settings.synthetic_tab_spaces) *
+						settings.tab_width;
+					if (width_needed > width_handled)
+						char_width = width_needed - width_handled;
+					}
+				else
+					in_initial_spaces = false;
+				}
+
+			if (x < char_width / 2)
 				return column;
-			x -= glyph_info.xOff;
-			cur_column_width += glyph_info.xOff;
+			x -= char_width;
+			cur_column_width += char_width;
 			column += 1;
 			p += char_num_bytes;
 			}
