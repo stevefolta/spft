@@ -89,6 +89,18 @@ The tab width for tab-stop (that is, non-elastic) tabs, in pixels.
 .B column_separation
 The space between columns when using elastic tabs, in pixels.
 .TP
+.B synthetic_tab_spaces
+Imagine you're editing a file in Vim.  Even if the lines in your file are
+indented using tabs, Vim will use some number of spaces (based on its 'tabstop'
+setting) to show them on the screen, because it thinks of the screen as a grid
+of characters.  If \(lqsynthetic_tab_spaces\(rq is greater than zero, spft will
+treat that number of spaces at the beginning of a line as a \(lqsynthetic
+tab\(rq, and display them as being \(lqtab_width\(rq pixels wide (by widening
+the last space).  Set \(lqsynthetic_tab_spaces\(rq to the same value as
+Vim's 'tabstop' and 'shiftwidth' settings to have indentation show up the way
+you like it based on how you set \(lqtab_width\(rq.  Defaults to zero, meaning
+\(lqsynthetic tabs\(rq are disabled.
+.TP
 .B geometry
 The window geometry, as per 
 .BR XParseGeometry (3).
