@@ -18,6 +18,12 @@ def display_length(string):
 			num_displayed_chars += 1
 	return num_displayed_chars
 
+def decode(raw_bytes):
+	try:
+		return str(raw_bytes, encoding = "utf-8")
+	except:
+		return str(raw_bytes, encoding = "latin1")
+
 
 # Columnation, following how "ls" does it.
 
@@ -110,7 +116,7 @@ if ls_binary == "":
 	printf(f"Couldn't find \"ls\"!", file = sys.stderr)
 	sys.exit(1)
 
-process = subprocess.Popen([ls_binary] + ls_args + ["-1"], stdout = subprocess.PIPE, encoding = "utf-8")
+process = subprocess.Popen([ls_binary] + ls_args + ["-1"], stdout = subprocess.PIPE)
 result = process.communicate()
 
 if long_output:
@@ -122,6 +128,7 @@ if long_output:
 			filenames = filenames[1:]
 		print("\x1B[?5001h", end = '')
 		for line in filenames:
+			line = decode(line)
 			match = long_re.match(line)
 			if match:
 				print('\t'.join(match.groups()))
@@ -134,10 +141,11 @@ if long_output:
 else:
 	filenames = result[0].splitlines()
 	if first_line_summary and len(filenames) > 0:
-		print(filenames[0])
+		print(decode(filenames[0]))
 		filenames = filenames[1:]
 	cur_filenames = []
 	for line in filenames:
+		line = decode(line)
 		if len(line) == 0 or line[-1] == ":":
 			columnate(cur_filenames)
 			cur_filenames = []
