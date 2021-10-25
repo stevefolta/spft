@@ -94,8 +94,16 @@ void Terminal::tick()
 	int length = prebuffered_bytes + result;
 	int bytes_consumed = history->add_input(buffer, length);
 	length -= bytes_consumed;
-	if (length > 0)
-		memmove(buffer, buffer + bytes_consumed, length);
+	if (length > 0) {
+		if (length == BUFSIZ) {
+			// The history didn't consume *anything* -- probably it hit an
+			// unterminated escape sequence.  Just discard the whole buffer.  It's
+			// not a great solution, but it'll keep us from getting wedged.
+			length = 0;
+			}
+		else
+			memmove(buffer, buffer + bytes_consumed, length);
+		}
 	prebuffered_bytes = length;
 }
 
