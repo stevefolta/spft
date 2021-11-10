@@ -7,12 +7,16 @@
 
 class ElasticTabs {
 	public:
-		ElasticTabs(int64_t initial_line) :
+		ElasticTabs(int num_right_columns_in) :
+			num_right_columns(num_right_columns_in),
 			reference_count(0), is_dirty(false), first_dirty_line(INT64_MAX)
 			{}
 
 		std::vector<int>	column_widths;
+		int num_right_columns;
 		int	reference_count;
+
+		int num_columns() { return column_widths.size(); }
 
 		void acquire() { reference_count += 1; }
 		void release() {

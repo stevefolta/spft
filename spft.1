@@ -120,7 +120,12 @@ that auto-wrap is on without explicitly sending the code to turn it on.
 spft supports elastic tabs, enabled by a pair of non-standard "DEC Private
 Mode" escape sequences.  "\\x1B[?5001h" signals that the current cursor line
 starts group of lines with elastic tabs.  "\\x1B[?5001l" ends that group of
-lines; the current cursor line will not be part of it.
+lines; the current cursor line will not be part of it.  There are also expanded
+versions of these: "\\x1B[?5002;Nh", where N is the number of columns that will
+be right-justified; and "\\x1B?5002;1l" which ends the group, but includes the
+line with the cursor (useful if you're right-justifying columns in a single
+line).
+
 
 
 .SH SEE ALSO

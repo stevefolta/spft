@@ -801,30 +801,12 @@ const char* History::parse_csi(const char* p, const char* end)
 		switch (c) {
 			case 'h':
 				// Set Mode (SM).
-				for (int i = 0; i < args.num_args; ++i) {
-#ifdef PRINT_UNIMPLEMENTED_ESCAPES
-					bool handled =
-#endif
-						set_private_mode(args.args[i], true);
-#ifdef PRINT_UNIMPLEMENTED_ESCAPES
-					if (!handled)
-						printf("- Unimplemented set mode: ?%d\n", args.args[i]);
-#endif
-					}
+				set_private_modes(&args, true);
 				break;
 
 			case 'l':
 				// Reset Mode (RM).
-				for (int i = 0; i < args.num_args; ++i) {
-#ifdef PRINT_UNIMPLEMENTED_ESCAPES
-					bool handled =
-#endif
-						set_private_mode(args.args[i], false);
-#ifdef PRINT_UNIMPLEMENTED_ESCAPES
-					if (!handled)
-						printf("- Unimplemented reset mode: ?%d\n", args.args[i]);
-#endif
-					}
+				set_private_modes(&args, false);
 				break;
 
 			default:
@@ -892,52 +874,59 @@ const char* History::parse_st_string(const char* p, const char* end, bool can_en
 }
 
 
-bool History::set_private_mode(int mode, bool set)
+void History::set_private_modes(Arguments* args, bool set)
 {
-	switch (mode) {
-		case 1:
-			// DECCKM.
-			application_cursor_keys = set;
-			break;
+	for (int i = 0; i < args->num_args; ++i) {
+		switch (args->args[i]) {
+			case 1:
+				// DECCKM.
+				application_cursor_keys = set;
+				break;
 
-		case 7:
-			auto_wrap = set;
-			break;
+			case 7:
+				auto_wrap = set;
+				break;
 
-		case 12:
-			// Cursor blinking.
-			// We don't support this currently, so we're ignoring it.
-			break;
+			case 12:
+				// Cursor blinking.
+				// We don't support this currently, so we're ignoring it.
+				break;
 
-		case 25:
-			// Show cursor (DECTCEM).
-			cursor_enabled = set;
-			break;
+			case 25:
+				// Show cursor (DECTCEM).
+				cursor_enabled = set;
+				break;
 
-		case 1049:
-			// Alternate screen.
-			if (set)
-				enter_alternate_screen();
-			else
-				exit_alternate_screen();
-			break;
+			case 1049:
+				// Alternate screen.
+				if (set)
+					enter_alternate_screen();
+				else
+					exit_alternate_screen();
+				break;
 
-		case 2004:
-			use_bracketed_paste = set;
-			break;
+			case 2004:
+				use_bracketed_paste = set;
+				break;
 
-		case 5001:
-			if (set)
-				start_elastic_tabs();
-			else
-				end_elastic_tabs();
-			break;
+			case 5001:
+				if (set)
+					start_elastic_tabs();
+				else
+					end_elastic_tabs();
+				break;
+			case 5002:
+				if (set)
+					start_elastic_tabs(args->args[++i]);
+				else
+					end_elastic_tabs(args->args[++i] == 1);
+				break;
 
-		default:
-			return false;
+			default:
+				printf("- Unimplemented set mode: ?%d\n", args->args[i]);
+				break;
+			}
 		}
-
-	return true;
 }
 
 
@@ -1111,11 +1100,11 @@ void History::exit_alternate_screen()
 
 
 
-void History::start_elastic_tabs()
+void History::start_elastic_tabs(int num_right_columns)
 {
 	end_elastic_tabs();
 
-	current_elastic_tabs = new ElasticTabs(current_line);
+	current_elastic_tabs = new ElasticTabs(num_right_columns);
 	current_elastic_tabs->acquire();
 	Line* cur_line = line(current_line);
 	if (cur_line->elastic_tabs)
@@ -1125,17 +1114,19 @@ void History::start_elastic_tabs()
 }
 
 
-void History::end_elastic_tabs()
+void History::end_elastic_tabs(bool include_current_line)
 {
 	if (current_elastic_tabs == nullptr)
 		return;
 
 	// The current cursor line will not be part of the group of elastic tabbed
-	// lines.
-	Line* cur_line = line(current_line);
-	if (cur_line->elastic_tabs == current_elastic_tabs) {
-		current_elastic_tabs->release();
-		cur_line->elastic_tabs = nullptr;
+	// lines (unless include_current_line is true).
+	if (!include_current_line) {
+		Line* cur_line = line(current_line);
+		if (cur_line->elastic_tabs == current_elastic_tabs) {
+			current_elastic_tabs->release();
+			cur_line->elastic_tabs = nullptr;
+			}
 		}
 	current_elastic_tabs->release();
 	current_elastic_tabs = nullptr;

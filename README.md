@@ -43,7 +43,10 @@ second line way to the right.)
 So elastic tabs are enabled by a couple of special escape sequences.
 "\x1B[?5001h" starts a group of elastic-tabbed lines with the line that the
 cursor is on.  "\x1B[?5001l" ends that group; the line containing the cursor is
-not part of it.
+not part of it.  There are also expanded versions of these: "\x1B[?5002;Nh",
+where N is the number of columns that will be right-justified; and
+"\x1B?5002;1l" which ends the group, but includes the line with the cursor
+(useful if you're right-justifying columns in a single line).
 
 An "els" script is included; it wraps "ls" so the output is appropriate for
 elastic tabs.  You might want to put something like this in your .bashrc:

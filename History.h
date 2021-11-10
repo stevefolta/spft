@@ -62,6 +62,17 @@ class History {
 		int	main_screen_current_column;
 		int	main_screen_top_margin, main_screen_bottom_margin;
 
+		struct Arguments {
+			enum {
+				max_args = 20,
+				};
+			int	args[max_args];
+			int	num_args;
+			char	private_code_type;
+
+			const char*	parse(const char* p, const char* end);
+			};
+
 		int	line_index(int64_t which_line) {
 			return (first_line_index + (which_line - first_line)) % capacity;
 			}
@@ -79,7 +90,7 @@ class History {
 		const char*	parse_dcs(const char* p, const char* end);
 		const char*	parse_osc(const char* p, const char* end);
 		const char*	parse_st_string(const char* p, const char* end, bool can_end_with_bel = false);
-		bool	set_private_mode(int mode, bool set); 	// false => unimplemented
+		void	set_private_modes(Arguments* args, bool set);
 
 		int64_t	calc_screen_top_line();
 		int64_t	calc_screen_bottom_line();
@@ -95,22 +106,11 @@ class History {
 		void	enter_alternate_screen();
 		void	exit_alternate_screen();
 
-		void	start_elastic_tabs();
-		void	end_elastic_tabs();
+		void	start_elastic_tabs(int num_right_columns = 0);
+		void	end_elastic_tabs(bool include_current_line = false);
 		void	characters_added();
 		void	characters_deleted();
 		ElasticTabs* current_elastic_tabs;
-
-		struct Arguments {
-			enum {
-				max_args = 20,
-				};
-			int	args[max_args];
-			int	num_args;
-			char	private_code_type;
-
-			const char*	parse(const char* p, const char* end);
-			};
 
 		std::string	translate_line_drawing_chars(const char* start, const char* end);
 	};
