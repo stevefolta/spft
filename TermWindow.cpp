@@ -367,8 +367,13 @@ void TermWindow::draw()
 				int tab_width = 0;
 				if (line->elastic_tabs) {
 					ElasticTabs* elastic_tabs = line->elastic_tabs;
-					int column_width = elastic_tabs->column_widths[which_column];
 					int num_columns = elastic_tabs->num_columns();
+					int column_width = 0;
+					if (which_column < num_columns)
+						column_width = elastic_tabs->column_widths[which_column];
+					else {
+						// Shouldn't happen!
+						}
 					int first_right_column =
 						num_columns - elastic_tabs->num_right_columns;
 					if (which_column + 1 == first_right_column) {
