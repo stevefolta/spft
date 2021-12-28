@@ -148,7 +148,7 @@ void TermWindow::setup_fonts()
 		FcPatternAddDouble(pattern, FC_PIXEL_SIZE, font_size_override);
 		}
 	XftDefaultSubstitute(display, screen, pattern);
-	FcPattern* match = FcFontMatch(NULL, pattern, &result);
+	FcPattern* match = XftFontMatch(display, screen, pattern, &result);
 #ifdef SHOW_REAL_FONT
 	FcChar8* format_name = FcPatternFormat(match, (FcChar8*) "%{=fcmatch} size: %{size} pixelsize: %{pixelsize}");
 	printf("Real font: \"%s\".\n", format_name);
@@ -166,7 +166,7 @@ void TermWindow::setup_fonts()
 	// (We do this first because we'll be clobbering the weight later.)
 	FcPatternDel(pattern, FC_SLANT);
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
-	match = FcFontMatch(NULL, pattern, &result);
+	match = XftFontMatch(display, screen, pattern, &result);
 	xft_fonts[2] = XftFontOpenPattern(display, match);
 	if (xft_fonts[2] == nullptr) {
 		fprintf(stderr, "Couldn't open italic font.");
@@ -176,7 +176,7 @@ void TermWindow::setup_fonts()
 	// Bold italic.
 	FcPatternDel(pattern, FC_WEIGHT);
 	FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
-	match = FcFontMatch(NULL, pattern, &result);
+	match = XftFontMatch(display, screen, pattern, &result);
 	xft_fonts[3] = XftFontOpenPattern(display, match);
 	if (xft_fonts[3] == nullptr) {
 		fprintf(stderr, "Couldn't open bold italic font.");
@@ -186,7 +186,7 @@ void TermWindow::setup_fonts()
 	// Bold.
 	FcPatternDel(pattern, FC_SLANT);
 	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
-	match = FcFontMatch(NULL, pattern, &result);
+	match = XftFontMatch(display, screen, pattern, &result);
 	xft_fonts[1] = XftFontOpenPattern(display, match);
 	if (xft_fonts[1] == nullptr) {
 		fprintf(stderr, "Couldn't open bold font.");
@@ -205,7 +205,7 @@ void TermWindow::setup_fonts()
 		pattern =
 			FcNameParse((const FcChar8*) settings.line_drawing_font_spec.c_str());
 		XftDefaultSubstitute(display, screen, pattern);
-		FcPattern* match = FcFontMatch(NULL, pattern, &result);
+		FcPattern* match = XftFontMatch(display, screen, pattern, &result);
 		xft_fonts[4] = XftFontOpenPattern(display, match);
 		if (xft_fonts[4] == nullptr) {
 			fprintf(stderr, "Couldn't open line-drawing font.");
@@ -215,7 +215,7 @@ void TermWindow::setup_fonts()
 		// Bold.
 		FcPatternDel(pattern, FC_WEIGHT);
 		FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
-		match = FcFontMatch(NULL, pattern, &result);
+		match = XftFontMatch(display, screen, pattern, &result);
 		xft_fonts[5] = XftFontOpenPattern(display, match);
 		if (xft_fonts[5] == nullptr) {
 			fprintf(stderr, "Couldn't open bold line-drawing font.");
