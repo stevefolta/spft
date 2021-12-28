@@ -234,7 +234,7 @@ void TermWindow::setup_fonts()
 void TermWindow::cleanup_fonts()
 {
 	// Line-drawing.
-	if (xft_fonts[5] != xft_fonts[4])
+	if (xft_fonts[5] != xft_fonts[4] && xft_fonts[5] != xft_fonts[1])
 		XftFontClose(display, xft_fonts[5]);
 	xft_fonts[5] = nullptr;
 	if (xft_fonts[4] != xft_fonts[0])
