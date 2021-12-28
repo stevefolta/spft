@@ -686,6 +686,7 @@ void TermWindow::key_down(XKeyEvent* event)
 			return;
 			}
 		else if (keySym == XK_Insert) {
+			font_size_override = 0;
 			settings.read_settings_files();
 			cleanup_fonts();
 			setup_fonts();
