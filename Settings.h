@@ -23,6 +23,7 @@ struct Settings {
 	std::string geometry;
 	uint32_t border;
 	bool default_auto_wrap;
+	float font_size_increment;
 
 	void	read_settings_files();
 	void	read_settings_file(std::string path);

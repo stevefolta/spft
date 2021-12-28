@@ -26,6 +26,7 @@ Settings settings = {
 	.geometry = "80x24",
 	.border = 0,
 	.default_auto_wrap = true,
+	.font_size_increment = 0.5,
 	};
 
 
@@ -121,6 +122,8 @@ void SettingsParser::parse()
 					settings.border = parse_uint32(value_token);
 				else if (setting_name == "default_auto_wrap")
 					settings.default_auto_wrap = parse_bool(value_token);
+				else if (setting_name == "font_size_increment")
+					settings.font_size_increment = parse_float(value_token);
 				else
 					fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
 				}

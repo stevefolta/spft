@@ -41,6 +41,8 @@ class TermWindow {
 		XftDraw* xft_draw;
 		XftFont* xft_fonts[8];
 		unsigned int width, height;
+		double font_size_override = 0;
+		double used_font_size = 0;
 
 		int64_t top_line;
 

@@ -142,16 +142,25 @@ void TermWindow::setup_fonts()
 	// Regular.
 	FcPattern* pattern =
 		FcNameParse((const FcChar8*) settings.font_spec.c_str());
+	if (font_size_override > 0) {
+		FcPatternDel(pattern, FC_PIXEL_SIZE);
+		FcPatternDel(pattern, FC_SIZE);
+		FcPatternAddDouble(pattern, FC_PIXEL_SIZE, font_size_override);
+		}
 	XftDefaultSubstitute(display, screen, pattern);
 	FcPattern* match = FcFontMatch(NULL, pattern, &result);
 #ifdef SHOW_REAL_FONT
-	FcChar8* format_name = FcPatternFormat(match, (FcChar8*) "%{=fcmatch}");
+	FcChar8* format_name = FcPatternFormat(match, (FcChar8*) "%{=fcmatch} size: %{size} pixelsize: %{pixelsize}");
 	printf("Real font: \"%s\".\n", format_name);
 	free(format_name);
 #endif
 	xft_fonts[0] = XftFontOpenPattern(display, match);
 	if (xft_fonts[0] == nullptr)
 		throw std::runtime_error("Couldn't open the font.");
+
+	// Get the font size used.
+	used_font_size = 0;
+	result = FcPatternGetDouble(pattern, FC_PIXEL_SIZE, 0, &used_font_size);
 
 	// Italic.
 	// (We do this first because we'll be clobbering the weight later.)
@@ -682,6 +691,30 @@ void TermWindow::key_down(XKeyEvent* event)
 			setup_fonts();
 			screen_size_changed();
 			draw();
+			return;
+			}
+		}
+
+	// Alt-+/-.
+	if ((event->state & Mod1Mask) != 0) {
+		if (keySym == XK_minus) {
+			if (used_font_size > 2 * settings.font_size_increment) {
+				font_size_override = used_font_size - settings.font_size_increment;
+				cleanup_fonts();
+				setup_fonts();
+				screen_size_changed();
+				draw();
+				}
+			return;
+			}
+		else if (keySym == XK_plus || keySym == XK_equal) {
+			if (used_font_size > 0) {
+				font_size_override = used_font_size + settings.font_size_increment;
+				cleanup_fonts();
+				setup_fonts();
+				screen_size_changed();
+				draw();
+				}
 			return;
 			}
 		}
