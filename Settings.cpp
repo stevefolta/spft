@@ -44,6 +44,8 @@ class SettingsParser {
 
 		void	parse();
 
+		void	parse_setting(std::string setting_name, std::string value_token);
+
 	protected:
 		const char*	p;
 		const char*	end;
@@ -55,6 +57,47 @@ class SettingsParser {
 		float	parse_float(std::string token);
 		bool	parse_bool(std::string token);
 	};
+
+
+void SettingsParser::parse_setting(std::string setting_name, std::string value_token)
+{
+	if (setting_name == "font")
+		settings.font_spec = unquote_string(value_token);
+	else if (setting_name == "line_drawing_font")
+		settings.line_drawing_font_spec = unquote_string(value_token);
+	else if (setting_name == "term_name")
+		settings.term_name = unquote_string(value_token);
+	else if (setting_name == "default_foreground_color")
+		settings.default_foreground_color = parse_uint32(value_token);
+	else if (setting_name == "default_background_color")
+		settings.default_background_color = parse_uint32(value_token);
+	else if (setting_name == "average_character_width")
+		settings.average_character_width = parse_float(value_token);
+	else if (setting_name == "double_click_ms")
+		settings.double_click_ms = parse_uint32(value_token);
+	else if (setting_name == "word_separator_characters")
+		settings.word_separator_characters = unquote_string(value_token);
+	else if (setting_name == "additional_word_separator_characters")
+		settings.additional_word_separator_characters = unquote_string(value_token);
+	else if (setting_name == "window_title")
+		settings.window_title = unquote_string(value_token);
+	else if (setting_name == "tab_width")
+		settings.tab_width = parse_uint32(value_token);
+	else if (setting_name == "column_separation")
+		settings.column_separation = parse_uint32(value_token);
+	else if (setting_name == "synthetic_tab_spaces")
+		settings.synthetic_tab_spaces = parse_uint32(value_token);
+	else if (setting_name == "geometry")
+		settings.geometry = unquote_string(value_token);
+	else if (setting_name == "border")
+		settings.border = parse_uint32(value_token);
+	else if (setting_name == "default_auto_wrap")
+		settings.default_auto_wrap = parse_bool(value_token);
+	else if (setting_name == "font_size_increment")
+		settings.font_size_increment = parse_float(value_token);
+	else
+		fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
+}
 
 
 void SettingsParser::parse()
@@ -90,42 +133,7 @@ void SettingsParser::parse()
 
 			// Set the setting.
 			try {
-				if (setting_name == "font")
-					settings.font_spec = unquote_string(value_token);
-				else if (setting_name == "line_drawing_font")
-					settings.line_drawing_font_spec = unquote_string(value_token);
-				else if (setting_name == "term_name")
-					settings.term_name = unquote_string(value_token);
-				else if (setting_name == "default_foreground_color")
-					settings.default_foreground_color = parse_uint32(value_token);
-				else if (setting_name == "default_background_color")
-					settings.default_background_color = parse_uint32(value_token);
-				else if (setting_name == "average_character_width")
-					settings.average_character_width = parse_float(value_token);
-				else if (setting_name == "double_click_ms")
-					settings.double_click_ms = parse_uint32(value_token);
-				else if (setting_name == "word_separator_characters")
-					settings.word_separator_characters = unquote_string(value_token);
-				else if (setting_name == "additional_word_separator_characters")
-					settings.additional_word_separator_characters = unquote_string(value_token);
-				else if (setting_name == "window_title")
-					settings.window_title = unquote_string(value_token);
-				else if (setting_name == "tab_width")
-					settings.tab_width = parse_uint32(value_token);
-				else if (setting_name == "column_separation")
-					settings.column_separation = parse_uint32(value_token);
-				else if (setting_name == "synthetic_tab_spaces")
-					settings.synthetic_tab_spaces = parse_uint32(value_token);
-				else if (setting_name == "geometry")
-					settings.geometry = unquote_string(value_token);
-				else if (setting_name == "border")
-					settings.border = parse_uint32(value_token);
-				else if (setting_name == "default_auto_wrap")
-					settings.default_auto_wrap = parse_bool(value_token);
-				else if (setting_name == "font_size_increment")
-					settings.font_size_increment = parse_float(value_token);
-				else
-					fprintf(stderr, "Unknown setting: %s.\n", setting_name.c_str());
+				parse_setting(setting_name, value_token);
 				}
 			catch (parse_error& e) {
 				fprintf(stderr, "Invalid \"%s\" setting: %s\n", setting_name.c_str(), e.what());
