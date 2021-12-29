@@ -30,6 +30,9 @@ Scroll up and down in the history.
 .TP
 .B Shift-Insert
 Re-read the settings file and immediately use the new settings.
+.TP
+.B Alt-Plus, Alt-Minus
+Adjust font size.
 
 .SH CONFIGURATION
 spft can be configured using the \(lq$XDG_CONFIG_HOME/spft/settings\(rq file
@@ -114,6 +117,10 @@ The window border (if any), in pixels.
 A boolean indicating whether "auto-wrap" defaults to being on or off.  If not
 specified, this defaults to being on, because readline (and hence bash) assumes
 that auto-wrap is on without explicitly sending the code to turn it on.
+.TP
+.B font_size_increment
+A floating-point number indicating how much to increment or decrement the font
+size (in pixels) when using the Alt-Plus or Alt-Minus keys.
 
 
 .SH ELASTIC TABS
