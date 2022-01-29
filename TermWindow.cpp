@@ -902,6 +902,7 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 		column_for_pixel(mouse_position.line, event->x - settings.border);
 
 	// Set the selection.
+	int old_selecting_state = selecting_state;
 	if (mouse_position < cur_selection_start) {
 		selection_start = mouse_position;
 		selection_end = cur_selection_start;
@@ -913,6 +914,12 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 		selecting_state = SelectingForward;
 		}
 	if (selecting_by == SelectingByWord) {
+		if (old_selecting_state == SelectingBackward && selecting_state == SelectingForward) {
+			// This is the one case where we lose the anchored word.  It's right
+			// before the selection start.
+			if (selection_start.column > 0)
+				selection_start.column -= 1;
+			}
 		selection_start = start_of_word(selection_start);
 		selection_end = end_of_word(selection_end);
 		}
