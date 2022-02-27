@@ -143,13 +143,21 @@ void TermWindow::setup_fonts()
 		line_drawing_font = regular_font;
 	else {
 		line_drawing_font =
-			new FontSet(settings.line_drawing_font_spec, display, screen, font_size_override, true);
+			new FontSet(
+				settings.line_drawing_font_spec,
+				display, screen, font_size_override, true);
 		}
+	monospace_font =
+		new FontSet(
+			settings.monospace_font_spec,
+			display, screen, font_size_override);
 }
 
 
 void TermWindow::cleanup_fonts()
 {
+	delete monospace_font;
+	monospace_font = nullptr;
 	if (line_drawing_font != regular_font)
 		delete line_drawing_font;
 	line_drawing_font = nullptr;
@@ -603,7 +611,7 @@ void TermWindow::key_down(XKeyEvent* event)
 			}
 		}
 
-	// Alt-+/-.
+	// Alt-+/-/ESC.
 	if ((event->state & Mod1Mask) != 0) {
 		if (keySym == XK_minus) {
 			if (regular_font->used_font_size > 2 * settings.font_size_increment) {
@@ -623,6 +631,12 @@ void TermWindow::key_down(XKeyEvent* event)
 				screen_size_changed();
 				draw();
 				}
+			return;
+			}
+		else if (keySym == XK_Escape) {
+			use_monospace_font = !use_monospace_font;
+			screen_size_changed();
+			draw();
 			return;
 			}
 		}

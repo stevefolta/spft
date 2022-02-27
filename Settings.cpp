@@ -12,6 +12,7 @@
 Settings settings = {
 	.font_spec = "Helvetica Neue,sans\\-serif-16.5:style=Light",
 	.line_drawing_font_spec = "",
+	.monospace_font_spec = "monospace-16.5",
 	.term_name = "xterm",
 	.default_foreground_color = 0,
 	.default_background_color = 15,
@@ -20,6 +21,7 @@ Settings settings = {
 	.word_separator_characters = " \t!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}",
 	.additional_word_separator_characters = "",
 	.window_title = "spft",
+	.working_directory = "",
 	.tab_width = 24,
 	.column_separation = 20,
 	.synthetic_tab_spaces = 0,
@@ -65,6 +67,8 @@ void SettingsParser::parse_setting(std::string setting_name, std::string value_t
 		settings.font_spec = unquote_string(value_token);
 	else if (setting_name == "line_drawing_font")
 		settings.line_drawing_font_spec = unquote_string(value_token);
+	else if (setting_name == "monospace_font")
+		settings.monospace_font_spec = unquote_string(value_token);
 	else if (setting_name == "term_name")
 		settings.term_name = unquote_string(value_token);
 	else if (setting_name == "default_foreground_color")

@@ -41,8 +41,10 @@ class TermWindow {
 		XftDraw* xft_draw;
 		FontSet* regular_font = nullptr;
 		FontSet* line_drawing_font = nullptr;
+		FontSet* monospace_font = nullptr;
 		unsigned int width, height;
 		double font_size_override = 0;
+		bool use_monospace_font = false;
 
 		int64_t top_line;
 
@@ -96,7 +98,9 @@ class TermWindow {
 			const KeyMapping* key_mappings, int num_key_mappings);
 
 		XftFont*	xft_font_for(const Style& style) {
-			return (style.line_drawing ? line_drawing_font : regular_font)->xft_font_for(style);
+			return
+				(use_monospace_font ? monospace_font :
+				 ((style.line_drawing ? line_drawing_font : regular_font)))->xft_font_for(style);
 			}
 
 		void	setup_fonts();
