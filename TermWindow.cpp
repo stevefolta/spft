@@ -541,13 +541,15 @@ void TermWindow::screen_size_changed()
 {
 	XGlyphInfo glyph_info;
 	XftTextExtentsUtf8(
-		display, regular_font->plain_xft_font(),
+		display, (use_monospace_font ? monospace_font : regular_font)->plain_xft_font(),
 		(const FcChar8*) "M", 1,
 		&glyph_info);
 	int lines_on_screen = displayed_lines();
+	double average_character_width =
+		use_monospace_font ? 1.0 : settings.average_character_width;
 	int characters_per_line =
 		(width - 2 * settings.border) /
-		(glyph_info.xOff * settings.average_character_width);
+		(glyph_info.xOff * average_character_width);
 
 	history->set_lines_on_screen(lines_on_screen);
 	history->set_characters_per_line(characters_per_line);
