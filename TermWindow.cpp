@@ -56,13 +56,13 @@ TermWindow::TermWindow()
 		XParseGeometry(settings.geometry.c_str(), &x, &y, &columns, &rows);
 	XGlyphInfo glyph_info;
 	XftTextExtentsUtf8(
-		display, xft_fonts[0],
+		display, regular_font->plain_xft_font(),
 		(const FcChar8*) "M", 1,
 		&glyph_info);
 	width =
 		ceil(columns * glyph_info.xOff * settings.average_character_width) +
 		2 * settings.border;
-	height = rows * xft_fonts[0]->height + 2 * settings.border;
+	height = rows * regular_font->height() + 2 * settings.border;
 	if (geometry_bits & XNegative)
 		x += DisplayWidth(display, screen) - width - 2;
 	if (geometry_bits & YNegative)
@@ -137,117 +137,24 @@ TermWindow::~TermWindow()
 
 void TermWindow::setup_fonts()
 {
-	FcResult result;
-
-	// Regular.
-	FcPattern* pattern =
-		FcNameParse((const FcChar8*) settings.font_spec.c_str());
-	if (font_size_override > 0) {
-		FcPatternDel(pattern, FC_PIXEL_SIZE);
-		FcPatternDel(pattern, FC_SIZE);
-		FcPatternAddDouble(pattern, FC_PIXEL_SIZE, font_size_override);
-		}
-	XftDefaultSubstitute(display, screen, pattern);
-	FcPattern* match = XftFontMatch(display, screen, pattern, &result);
-#ifdef SHOW_REAL_FONT
-	FcChar8* format_name = FcPatternFormat(match, (FcChar8*) "%{=fcmatch} size: %{size} pixelsize: %{pixelsize}");
-	printf("Real font: \"%s\".\n", format_name);
-	free(format_name);
-#endif
-	xft_fonts[0] = XftFontOpenPattern(display, match);
-	if (xft_fonts[0] == nullptr)
-		throw std::runtime_error("Couldn't open the font.");
-
-	// Get the font size used.
-	used_font_size = 0;
-	result = FcPatternGetDouble(pattern, FC_PIXEL_SIZE, 0, &used_font_size);
-
-	// Italic.
-	// (We do this first because we'll be clobbering the weight later.)
-	FcPatternDel(pattern, FC_SLANT);
-	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
-	match = XftFontMatch(display, screen, pattern, &result);
-	xft_fonts[2] = XftFontOpenPattern(display, match);
-	if (xft_fonts[2] == nullptr) {
-		fprintf(stderr, "Couldn't open italic font.");
-		xft_fonts[2] = xft_fonts[0];
-		}
-
-	// Bold italic.
-	FcPatternDel(pattern, FC_WEIGHT);
-	FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
-	match = XftFontMatch(display, screen, pattern, &result);
-	xft_fonts[3] = XftFontOpenPattern(display, match);
-	if (xft_fonts[3] == nullptr) {
-		fprintf(stderr, "Couldn't open bold italic font.");
-		xft_fonts[3] = xft_fonts[0];
-		}
-
-	// Bold.
-	FcPatternDel(pattern, FC_SLANT);
-	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
-	match = XftFontMatch(display, screen, pattern, &result);
-	xft_fonts[1] = XftFontOpenPattern(display, match);
-	if (xft_fonts[1] == nullptr) {
-		fprintf(stderr, "Couldn't open bold font.");
-		xft_fonts[1] = xft_fonts[0];
-		}
-
-	FcPatternDestroy(pattern);
-
-	// Line drawing fonts.
-	if (settings.line_drawing_font_spec.empty()) {
-		for (int i = 0; i < 4; ++i)
-			xft_fonts[i + 4] = xft_fonts[i];
-		}
+	regular_font =
+		new FontSet(settings.font_spec, display, screen, font_size_override);
+	if (settings.line_drawing_font_spec.empty())
+		line_drawing_font = regular_font;
 	else {
-		// Regular.
-		pattern =
-			FcNameParse((const FcChar8*) settings.line_drawing_font_spec.c_str());
-		XftDefaultSubstitute(display, screen, pattern);
-		FcPattern* match = XftFontMatch(display, screen, pattern, &result);
-		xft_fonts[4] = XftFontOpenPattern(display, match);
-		if (xft_fonts[4] == nullptr) {
-			fprintf(stderr, "Couldn't open line-drawing font.");
-			xft_fonts[4] = xft_fonts[0];
-			}
-
-		// Bold.
-		FcPatternDel(pattern, FC_WEIGHT);
-		FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
-		match = XftFontMatch(display, screen, pattern, &result);
-		xft_fonts[5] = XftFontOpenPattern(display, match);
-		if (xft_fonts[5] == nullptr) {
-			fprintf(stderr, "Couldn't open bold line-drawing font.");
-			xft_fonts[5] = xft_fonts[0];
-			}
-
-		// Don't bother with italic.
-		xft_fonts[6] = xft_fonts[4];
-		xft_fonts[7] = xft_fonts[5];
-
-		FcPatternDestroy(pattern);
+		line_drawing_font =
+			new FontSet(settings.line_drawing_font_spec, display, screen, font_size_override, true);
 		}
 }
 
 
 void TermWindow::cleanup_fonts()
 {
-	// Line-drawing.
-	if (xft_fonts[5] != xft_fonts[4] && xft_fonts[5] != xft_fonts[1])
-		XftFontClose(display, xft_fonts[5]);
-	xft_fonts[5] = nullptr;
-	if (xft_fonts[4] != xft_fonts[0])
-		XftFontClose(display, xft_fonts[4]);
-	xft_fonts[4] = nullptr;
-	xft_fonts[6] = xft_fonts[7] = nullptr;
-
-	// Regular.
-	for (int i = 3; i >= 0; --i) {
-		if (i == 0 || xft_fonts[i] != xft_fonts[0])
-			XftFontClose(display, xft_fonts[i]);
-		xft_fonts[i] = nullptr;
-		}
+	if (line_drawing_font != regular_font)
+		delete line_drawing_font;
+	line_drawing_font = nullptr;
+	delete regular_font;
+	regular_font = nullptr;
 }
 
 
@@ -339,7 +246,7 @@ void TermWindow::draw()
 	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
-	int y = settings.border + xft_fonts[0]->ascent;
+	int y = settings.border + regular_font->ascent();
 	int64_t current_line = history->get_current_line();
 	for (int64_t which_line = effective_top_line; which_line <= last_line; ++which_line) {
 		bool line_contains_cursor =
@@ -420,8 +327,8 @@ void TermWindow::draw()
 				if (cur_background != settings.default_background_color) {
 					XftDrawRect(
 						xft_draw, colors.xft_color(cur_background),
-						x, y - xft_fonts[0]->ascent,
-						tab_width, xft_fonts[0]->height);
+						x, y - regular_font->ascent(),
+						tab_width, regular_font->height());
 					}
 				x += tab_width;
 				chars_drawn += 1;
@@ -518,8 +425,8 @@ void TermWindow::draw()
 				uint32_t cur_background = (inversity ? foreground_color : background_color);
 				XftDrawRect(
 					xft_draw, colors.xft_color(cur_background), 
-					x, y - xft_fonts[0]->ascent,
-					subrun_width, xft_fonts[0]->height);
+					x, y - regular_font->ascent(),
+					subrun_width, regular_font->height());
 
 				// Characters.
 				if (!run->style.invisible) {
@@ -549,16 +456,16 @@ void TermWindow::draw()
 			// "x" is already at the end of the line.
 			XGlyphInfo glyph_info;
 			XftTextExtentsUtf8(
-				display, xft_fonts[0],
+				display, regular_font->plain_xft_font(),
 				(const FcChar8*) " ", 1,
 				&glyph_info);
 			XftDrawRect(
 				xft_draw, colors.xft_color(settings.default_foreground_color), 
-				x, y - xft_fonts[0]->ascent,
-				glyph_info.xOff, xft_fonts[0]->height);
+				x, y - regular_font->ascent(),
+				glyph_info.xOff, regular_font->height());
 			}
 
-		y += xft_fonts[0]->height;
+		y += regular_font->height();
 		}
 
 	// Copy to the screen.
@@ -579,7 +486,7 @@ void TermWindow::decorate_run(Style style, int x, int width, int y)
 			XDrawLine(display, pixmap, gc, x, y + 3, x2, y + 3);
 		}
 	if (style.crossed_out) {
-		int cross_y = y - xft_fonts[0]->ascent / 3;
+		int cross_y = y - regular_font->ascent() / 3;
 		XDrawLine(display, pixmap, gc, x, cross_y, x2, cross_y);
 		}
 }
@@ -626,7 +533,7 @@ void TermWindow::screen_size_changed()
 {
 	XGlyphInfo glyph_info;
 	XftTextExtentsUtf8(
-		display, xft_fonts[0],
+		display, regular_font->plain_xft_font(),
 		(const FcChar8*) "M", 1,
 		&glyph_info);
 	int lines_on_screen = displayed_lines();
@@ -699,8 +606,8 @@ void TermWindow::key_down(XKeyEvent* event)
 	// Alt-+/-.
 	if ((event->state & Mod1Mask) != 0) {
 		if (keySym == XK_minus) {
-			if (used_font_size > 2 * settings.font_size_increment) {
-				font_size_override = used_font_size - settings.font_size_increment;
+			if (regular_font->used_font_size > 2 * settings.font_size_increment) {
+				font_size_override = regular_font->used_font_size - settings.font_size_increment;
 				cleanup_fonts();
 				setup_fonts();
 				screen_size_changed();
@@ -709,8 +616,8 @@ void TermWindow::key_down(XKeyEvent* event)
 			return;
 			}
 		else if (keySym == XK_plus || keySym == XK_equal) {
-			if (used_font_size > 0) {
-				font_size_override = used_font_size + settings.font_size_increment;
+			if (regular_font->used_font_size > 0) {
+				font_size_override = regular_font->used_font_size + settings.font_size_increment;
 				cleanup_fonts();
 				setup_fonts();
 				screen_size_changed();
@@ -812,7 +719,7 @@ void TermWindow::mouse_button_down(XButtonEvent* event)
 			last_line = history->get_last_line();
 		selection_start.line =
 			effective_top_line +
-			(event->y - settings.border) / xft_fonts[0]->height;
+			(event->y - settings.border) / regular_font->height();
 		if (selection_start.line < effective_top_line)
 			selection_start.line = effective_top_line;
 		else if (selection_start.line > last_line)
@@ -870,7 +777,7 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 		if (top_line < history->get_first_line())
 			top_line = history->get_first_line();
 		}
-	else if (y > displayed_lines() * xft_fonts[0]->height) {
+	else if (y > displayed_lines() * regular_font->height()) {
 		int new_top_line = calc_effective_top_line() + 1;
 		if (new_top_line + displayed_lines() >= history->get_last_line())
 			scroll_to_bottom();
@@ -891,7 +798,7 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 	int64_t last_line = effective_top_line + num_lines - 1;
 	if (last_line > history->get_last_line())
 		last_line = history->get_last_line();
-	mouse_position.line = effective_top_line + y / xft_fonts[0]->height;
+	mouse_position.line = effective_top_line + y / regular_font->height();
 	if (mouse_position.line < effective_top_line)
 		mouse_position.line = effective_top_line;
 	else if (mouse_position.line > last_line)
