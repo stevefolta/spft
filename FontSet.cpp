@@ -33,36 +33,51 @@ FontSet::FontSet(
 	used_font_size = 0;
 	result = FcPatternGetDouble(pattern, FC_PIXEL_SIZE, 0, &used_font_size);
 
-	// Italic.
-	// (We do this first because we'll be clobbering the weight later.)
-	FcPatternDel(pattern, FC_SLANT);
-	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
-	match = XftFontMatch(display, screen, pattern, &result);
-	xft_fonts[2] = XftFontOpenPattern(display, match);
-	if (xft_fonts[2] == nullptr) {
-		fprintf(stderr, "Couldn't open italic font.");
+	// Italics.
+	if (skip_italics) {
 		xft_fonts[2] = xft_fonts[0];
+		// We'll make bold-italic be the same as bold, below.
 		}
+	else {
+		// Italic.
+		// (We do this first because we'll be clobbering the weight later.)
+		FcPatternDel(pattern, FC_SLANT);
+		FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ITALIC);
+		match = XftFontMatch(display, screen, pattern, &result);
+		xft_fonts[2] = XftFontOpenPattern(display, match);
+		if (xft_fonts[2] == nullptr) {
+			fprintf(stderr, "Couldn't open italic font.");
+			xft_fonts[2] = xft_fonts[0];
+			}
 
-	// Bold italic.
-	FcPatternDel(pattern, FC_WEIGHT);
-	FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
-	match = XftFontMatch(display, screen, pattern, &result);
-	xft_fonts[3] = XftFontOpenPattern(display, match);
-	if (xft_fonts[3] == nullptr) {
-		fprintf(stderr, "Couldn't open bold italic font.");
-		xft_fonts[3] = xft_fonts[0];
+		// Bold italic.
+		FcPatternDel(pattern, FC_WEIGHT);
+		FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
+		match = XftFontMatch(display, screen, pattern, &result);
+		xft_fonts[3] = XftFontOpenPattern(display, match);
+		if (xft_fonts[3] == nullptr) {
+			fprintf(stderr, "Couldn't open bold italic font.");
+			xft_fonts[3] = xft_fonts[0];
+			}
 		}
 
 	// Bold.
-	FcPatternDel(pattern, FC_SLANT);
-	FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
+	if (skip_italics) {
+		FcPatternDel(pattern, FC_WEIGHT);
+		FcPatternAddInteger(pattern, FC_WEIGHT, FC_WEIGHT_BOLD);
+		}
+	else {
+		FcPatternDel(pattern, FC_SLANT);
+		FcPatternAddInteger(pattern, FC_SLANT, FC_SLANT_ROMAN);
+		}
 	match = XftFontMatch(display, screen, pattern, &result);
 	xft_fonts[1] = XftFontOpenPattern(display, match);
 	if (xft_fonts[1] == nullptr) {
 		fprintf(stderr, "Couldn't open bold font.");
 		xft_fonts[1] = xft_fonts[0];
 		}
+	if (skip_italics)
+		xft_fonts[3] = xft_fonts[1];
 
 	FcPatternDestroy(pattern);
 }
