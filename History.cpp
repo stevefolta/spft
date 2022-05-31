@@ -537,6 +537,7 @@ const char* History::parse_csi(const char* p, const char* end)
 				clear_to_beginning_of_screen();
 			else if (args.args[0] == 2 || args.args[0] == 3)
 				clear_screen();
+			update_at_end_of_line();
 			break;
 
 		case 'K':
