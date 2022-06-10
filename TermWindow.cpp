@@ -857,6 +857,9 @@ void TermWindow::mouse_moved(XMotionEvent* event)
 
 void TermWindow::mouse_button_up(XButtonEvent* event)
 {
+	if (selecting_state == NotSelecting)
+		return;
+
 	if (event->button == Button1) {
 		selecting_state = NotSelecting;
 
