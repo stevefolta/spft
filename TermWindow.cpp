@@ -645,6 +645,7 @@ void TermWindow::key_down(XKeyEvent* event)
 
 	// Special keys that XLookupString() doesn't handle.
 	static const KeyMapping key_mappings[] = {
+		{ XK_BackSpace, AnyModKey, "\x7F" }, 	// XLookupString() *does* handle this, but returns ^H, which some programs don't like.
 		{ XK_Up, AnyModKey, "\x1B[A" },
 		{ XK_Down, AnyModKey, "\x1B[B" },
 		{ XK_Left, AnyModKey, "\x1B[D" },
