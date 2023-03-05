@@ -4,4 +4,5 @@ Makefile.local
 tags
 *.log
 logs
+result
 
