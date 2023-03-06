@@ -2,7 +2,6 @@
 	description = "Simple Proportional-Font Terminal";
 
 	inputs = {
-		nixpkgs.url = "github:NixOS/nixpkgs";
 		};
 
 	outputs = { self, nixpkgs }:
