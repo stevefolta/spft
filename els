@@ -120,7 +120,7 @@ process = subprocess.Popen([ls_binary] + ls_args + ["-1"], stdout = subprocess.P
 result = process.communicate()
 
 if long_output:
-	long_re = re.compile('([\w-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\S+)\s+(\w+\s+\d+\s+[\d:]+)\s+([^\r\n]+)')
+	long_re = re.compile(r'([\w-]+)\s+(\d+)\s+(\w+)\s+(\w+)\s+(\S+)\s+(\w+\s+\d+\s+[\d:]+)\s+([^\r\n]+)')
 	try:
 		filenames = result[0].splitlines()
 		if first_line_summary and len(filenames) > 0:
