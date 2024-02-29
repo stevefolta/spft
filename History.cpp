@@ -520,7 +520,10 @@ const char* History::parse_csi(const char* p, const char* end)
 			break;
 
 		case 'H':
-			// Cursor Position.
+		case 'f':
+			// Cursor Position (CUP).
+			// 'f' is the obsolete "Horizontal and Vertical Position (HVP)", but
+			// there are still applications that send it.
 			current_line =
 				calc_screen_top_line() + (args.args[0] ? args.args[0] - 1 : 0);
 			current_column = args.args[1] ? args.args[1] - 1 : 0;
