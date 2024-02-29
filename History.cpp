@@ -786,6 +786,8 @@ const char* History::parse_csi(const char* p, const char* end)
 				top_margin = 0;
 				bottom_margin = -1;
 				}
+			if (bottom_margin >= lines_on_screen - 1)
+				bottom_margin = -1;
 			break;
 
 		default:
