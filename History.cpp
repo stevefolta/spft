@@ -163,10 +163,16 @@ int History::add_input(const char* input, int length)
 					// "Fs" escape sequence.
 					// Not currently implemented.  We assume only one character
 					// follows the ESC.
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					printf("- Unimplemented escape: %c.\n", c);
+#endif
 					}
 				else if (c >= 0x30 && c <= 0x3F) {
 					// "Fp" escape sequence ("private use").
 					// We assume only one character follows the ESC.
+#ifdef PRINT_UNIMPLEMENTED_ESCAPES
+					printf("- Unimplemented escape: %c.\n", c);
+#endif
 					}
 				else if (c >= 0x20 && c <= 0x2F) {
 					// "nF" escape sequence.
