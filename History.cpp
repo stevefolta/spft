@@ -169,10 +169,27 @@ int History::add_input(const char* input, int length)
 					}
 				else if (c >= 0x30 && c <= 0x3F) {
 					// "Fp" escape sequence ("private use").
-					// We assume only one character follows the ESC.
+					if (c == '7') {
+						// Save Cursor (DECSC).
+						saved_line = current_line - calc_screen_top_line();
+						saved_column = current_column;
+						}
+					else if (c == '8') {
+						// Restore Cursor (DECRC).
+						if (current_line >= 0 && current_column >= 0) {
+							current_line = calc_screen_top_line() + saved_line;
+							current_column = saved_column;
+							ensure_current_line();
+							ensure_current_column();
+							update_at_end_of_line();
+							}
+						}
+					else {
+						// We assume only one character follows the ESC.
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
-					printf("- Unimplemented escape: %c.\n", c);
+						printf("- Unimplemented escape: %c.\n", c);
 #endif
+						}
 					}
 				else if (c >= 0x20 && c <= 0x2F) {
 					// "nF" escape sequence.

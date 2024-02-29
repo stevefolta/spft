@@ -56,6 +56,7 @@ class History {
 		char g0_character_set;
 		bool insert_mode;
 		bool auto_wrap;
+		int saved_line = -1, saved_column = -1;
 
 		// Saved during alternate screen.
 		int64_t	main_screen_current_line;
