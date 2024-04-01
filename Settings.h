@@ -2,6 +2,7 @@
 #define Settings_h
 
 #include <string>
+#include <stdint.h>
 
 
 struct Settings {
