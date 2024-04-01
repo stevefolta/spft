@@ -760,6 +760,10 @@ const char* History::parse_csi(const char* p, const char* end)
 							which_arg += 3;
 							}
 						break;
+					case 39:
+						// Set foreground color to default.
+						current_style.foreground_color = settings.default_foreground_color;
+						break;
 					case 40: case 41: case 42: case 43:
 					case 44: case 45: case 46: case 47:
 						// Set background color.
@@ -785,6 +789,10 @@ const char* History::parse_csi(const char* p, const char* end)
 								args.args[which_arg + 3];
 							which_arg += 3;
 							}
+						break;
+					case 49:
+						// Set background color to default.
+						current_style.background_color = settings.default_background_color;
 						break;
 					}
 				}
