@@ -3,6 +3,7 @@
 #include "Colors.h"
 #include "UTF8.h"
 #include "Terminal.h"
+#include "TermWindow.h"
 #include "ElasticTabs.h"
 #include <sstream>
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
@@ -874,7 +875,35 @@ const char* History::parse_osc(const char* p, const char* end)
 	if (sequence_end == nullptr)
 		return nullptr;
 
-	//*** TODO
+	// Trim the "<ESC>\" or "<BEL>" off the end.
+	sequence_end -= (sequence_end[-1] == '\a' ? 1 : 2);
+
+	// Get the argument.
+	int arg = -1;
+	while (p < sequence_end) {
+		char c = *p++;
+		if (c == ';')
+			break;
+		else if (c >= '0' || c <= '9') {
+			if (arg < 0)
+				arg = 0;
+			arg = (arg * 10) + (c - '0');
+			}
+		else {
+			// Invalid character.
+			return sequence_end;
+			}
+		}
+
+	// Set Text Parameters.
+
+	if (arg == 0 || arg == 2) {
+		// Change Window Title.
+		std::string title(p, sequence_end - p);
+		window->set_title(title.c_str());
+		return sequence_end;
+		}
+
 #ifdef PRINT_UNIMPLEMENTED_ESCAPES
 	printf("- Unimplemented OSC: %.*s\n", (int) (sequence_end - p), p);
 #endif

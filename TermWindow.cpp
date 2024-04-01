@@ -26,6 +26,7 @@ TermWindow::TermWindow()
 	history = new History();
 	terminal = new Terminal(history);
 	history->set_terminal(terminal);
+	history->set_window(this);
 
 	display = XOpenDisplay(nullptr);
 	if (display == nullptr)

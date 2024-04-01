@@ -50,6 +50,9 @@ $(OBJECTS_DIR):
 .PHONY: runnit
 runnit: $(PROGRAM)
 	@./$(PROGRAM) $(RUN_ARGS)
+.PHONY: run
+run: $(PROGRAM)
+	@./$(PROGRAM) $(RUN_ARGS)
 
 .PHONY: clean
 clean:

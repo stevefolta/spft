@@ -7,6 +7,7 @@
 
 class Line;
 class Terminal;
+class TermWindow;
 class ElasticTabs;
 
 // The History is the heart of the terminal.  It's the list of all the lines,
@@ -18,6 +19,7 @@ class History {
 		History();
 		~History();
 		void	set_terminal(Terminal* new_terminal) { terminal = new_terminal; }
+		void	set_window(TermWindow* new_window) { window = new_window; }
 
 		void	set_lines_on_screen(int new_lines_on_screen);
 		void	set_characters_per_line(int new_characters_per_line);
@@ -51,6 +53,7 @@ class History {
 		int	current_column;
 		Line**	lines;
 		Terminal*	terminal;
+		TermWindow* window = nullptr;
 		int	top_margin, bottom_margin; 	// -1 bottom_margin means "bottom of screen"
 		int64_t	alternate_screen_top_line; 	// -1: not in alternate screen.
 		char g0_character_set;
